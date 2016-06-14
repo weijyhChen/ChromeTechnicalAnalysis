@@ -1,0 +1,15 @@
+{
+	"manifest_version" : 2,
+	"name" : "ex1",
+	"description" : "ex1",
+	"version" : "0.0.1",
+	"app" : {
+		"background" : {
+			"scripts" : ["background.js"]
+		}
+	},
+	"permissions" : [
+		"<all_urls>",
+		"unlimitedStorage"
+	]			 
+}
