@@ -3,7 +3,7 @@
  *         主要是和成交量、漲跌家數、漲跌停家數、創新高低家數有關
  *         計算所產生的指標，例如絕對廣量指標(Absolute Breadth Index
  *         ,ABI)、騰落指標(Advance/Decline Line)、漲跌比率(Advance/
- *         Decline Ratio)、漲跌平盤成 交量(Advancing, Declining, 
+ *         Decline Ratio)、漲跌平盤成 交量(Advancing, Declining,
  *         Unchanged Valume)、廣量衝力指標(Breadth Thrust)、錢德動能
  *         擺盪指標(Chande Momentum Oscillator)、累積成交量指數(
  *         Cumulative Volume Index)、動態動能指標(Dynamic Momentum
@@ -11,14 +11,14 @@
  *         (On Balance Volume)…。
  *         有些動能指標是以整體市場來做分析，所謂水漲船高，整體市
  *         場向上時，各股向上的機率也升高。有些動能指標運用在各股，
- *         當動能指標向下，但股價卻背離向上時，就是要當心的時刻。 
+ *         當動能指標向下，但股價卻背離向上時，就是要當心的時刻。
  *         所有本範例中的指標皆可輔助決策，隨著時間流逝，不斷計算
  *         出新的指標結果，在本範例中將只是印出結果供做參考，實際
  *         有用的系統應當自動推論出目前的市場狀態是否值得投資，並
- *         結合下一範例的技術指標，挑選出較好的目標供使用者選擇。 
+ *         結合下一範例的技術指標，挑選出較好的目標供使用者選擇。
  */
 
-/* ※※ 注意：為了不影響原本綜合範例 10 的程式運作，因此不改變 
+/* ※※ 注意：為了不影響原本綜合範例 10 的程式運作，因此不改變
  * historyObject.js檔案，所以把計算出來的大盤及各公司指標資料放在這
  * 裡，實際上和大盤及各公司相關的資料應該放在 CompanyHistory 物件中。
  * 在計算這些資訊會先確定是否有新所有公司歷史資訊一次，如果沒有更
@@ -122,11 +122,45 @@ window.onload=function() {
 	var companyWeekHistoryObjectArray=[];
 	var companyMonthHistoryObjectArray=[];
 
-	/* 函式 calcAdvDecArray 用來計算每日/每週/每月
-	 * 上漲/下跌家數等基本資料的陣列。
+	/* 函式 timeCompare 用在將 advanceArray 及 declineArray
+	 * 排序時，該二陣列中的元素是物件，物件內容如下：
+	 *	{"time":時間,"inc":增加值,"Volume":成交量}
+	 * 函式中的 data1 及 data2 即上述的物件。
 	 */
 
-	function calcAdvDecArray() {
+	function timeCompare(data1,data2) {
+		var time1=data1.time;
+		var year1=parseInt(time1.substr(0,4));
+		var month1=parseInt(time1.substr(4,2));
+		var day1=parseInt(time1.substr(6,2));
+		var time2=data2.time;
+		var year2=parseInt(time2.substr(0,4));
+		var month2=parseInt(time2.substr(4,2));
+		var day2=parseInt(time2.substr(6,2));
+		if (year1>year2) {
+			return 1;
+		} else if (year1<year2) {
+			return -1;
+		} else {														// 年份相同
+			if (month1>month2) {
+				return 1;
+			} else if (month1<month2) {
+				return -1;
+			} else {													// 月份相同
+				if (day1>day2) {
+					return 1;
+				} else if (day1<day2) {
+					return -1;
+				} else {												// 日期相同
+					return 0;
+				}
+			}
+		}
+	}
+
+	/* 函式 calcDayAdvDecArray 用來計算每日漲跌基本資料 */
+
+	function calcDayAdvDecArray() {
 		if (totalDayAdvanceArray.length!=marketDayHistoryObject.historyDataArray.length) {
 			/* 如果 totalDayAdvanceArray 陣列大小和大盤每日歷史資料
 			 * 陣列的大小不一樣時表示要重新計算各種基本資料陣列。
@@ -146,7 +180,7 @@ window.onload=function() {
 			 * 歷史資料陣列的大小也會有不一致的情形。
 			 */
 
-			/* 首先將各基本資料陣列中元素全部初始化為0，使其大小和 
+			/* 首先將各基本資料陣列中元素全部初始化為0，使其大小和
 			 * marketDayHistoryObject.historyDataArray 陣列的大小一
 			 * 致，分別對應大盤某天的統計資料。
 			 */
@@ -157,13 +191,156 @@ window.onload=function() {
 				totalDayDeclineArray.push(0);
 				totalDayDeclineVolumeArray.push(0);
 			}
-			
-			/* 將每一家公司的每一天漲跌暫時先放入 advanceArray 及 
-			 * declineARray 中，放入這二個陣列中的是如下的物件：
-			 *	{"time":時間,"inc":增加值}
-			 *
+
+			/* 將每一家公司的每一天漲跌暫時先放入 advanceArray 及
+			 * declineArray 中，放入這二個陣列中的是如下的物件：
+			 *	{"time":時間,"inc":增加值,"Volume":成交量}
+			 * 其中每家公司在某一天若是上漲，則加入一個上述的物件
+			 * 到 advanceArray 中，inc 值是 1。
+			 * 產生 advanceArray 和 declineArray 後，再根據物件
+ 		 	 * 的 time 排序，排序完後將相同時間的 inc 及 Volume
+			 * 相加，即可得到基本資料陣列的內容。
 			 */
+
+			 var advanceArray=[];
+			 var declineArray=[];
+
+			 for (var i=0;i<totalCompany;i++) {							// 所有公司的每日歷史資訊都要處理
+			 	 var oneCompanyDayHistory=companyDayHistoryObjectArray[i];
+				 var dayHistoryData=oneCompanyDayHistory.historyDataArray;
+				 var prevClose=dayHistoryData[0].close;				// 取得第一天的收盤價
+				 for (var k=1;k<dayHistoryData.length;k++) {	// 由第二天起判斷漲跌
+					 var oneData=dayHistoryData[k];							// 得到一天的資料
+					 var time=oneData.time;
+					 var close=oneData.close;
+					 /* 成交量要用總價格而不是用張數，但因為沒有記錄成交總價格，所以只能用最低
+					  * 價做為成交張數的價格。(試過用最高價及最低價平均值會超過大盤總成交量)
+						* 後面印出漲跌價成交量後，發現總合會有超過大盤總成交量的情形，目前無法
+						* 找出問題所在。
+					  */
+					 var volume=oneData.volume*1000*oneData.low;
+					 if (close>prevClose) {											// 上漲
+						 advanceArray.push(
+							 {
+								 "time":time,
+								 "inc":1,
+								 "volume":volume
+							 }
+						 );
+					 } else if (close<prevClose) {							// 下跌
+						 declineArray.push(
+							 {
+								 "time":time,
+								 "inc":1,
+								 "volume":volume
+							 }
+						 );
+					 }
+					 prevClose=close;
+				 }
+			 }
+
+			 /* 產生好了 advanceArray 及 declineArray 後，要把它們按時間加以
+			  * 排序，排序完成後，把相同時間的 inc 相加即可得到該時間的上漲家數
+				* 及下跌家數。把相同時間的 volume 相加即可得到該時間上漲公司的總
+				* 成交量。
+				*/
+
+				advanceArray.sort(timeCompare);
+				declineArray.sort(timeCompare);
+
+				var advanceCountArray=[];
+				var declineCountArray=[];
+
+				var advanceTime=advanceArray[0].time;							// advanceTime 用來記錄要計算上漲家數的時間
+				var advanceCount=advanceArray[0].inc;							// advanceCount 用來計數時間是 advanceTime 時上漲的家數
+				var advanceVolume=advanceArray[0].volume;					// advanceVolume 用來計數時間是 advanceTime 時上漲家數的總成交量
+
+				for (var i=1;i<advanceArray.length;i++) {
+					if (advanceArray[i].time===advanceTime) {				// 如果時間相同
+						advanceCount=advanceCount+advanceArray[i].inc;// 增加上漲家數的計數值
+						advanceVolume=advanceVolume+advanceArray[i].volume;
+					} else {																				// 如果時間不相同
+						advanceCountArray.push(												// 將目前的上漲家數計數值及總成交量值堆入 advanceCountArray 中
+							{
+								"time":advanceTime,
+								"count":advanceCount,
+								"volume":advanceVolume
+							}
+						);
+						advanceTime=advanceArray[i].time;							// 重置計數時間
+						advanceCount=advanceArray[i].inc;							// 重置計數上漲家數
+						advanceVolume=advanceArray[i].volume;					// 重置上漲家數總成交量
+					}
+				}
+
+				/* advanceCountArray.length 和 marketDayHistoryObject.historyDataArray.length
+				 * 會差一天，原因是從第二天開始才能判斷漲跌。
+				 * 因此 advanceCountArray 中的元素要放入到 totalDayAdvanceArray
+				 * 及 totalDayAdvanceVolumeArray 中時，index 要相差 1。
+				 */
+
+				for (var i=0;i<advanceCountArray.length;i++) {
+					totalDayAdvanceArray[i+1]=advanceCountArray[i].count;
+					totalDayAdvanceVolumeArray[i+1]=advanceCountArray[i].volume/100000000;
+				}
+
+				var declineTime=declineArray[0].time;							// declineTime 用來記錄要計算下跌家數的時間
+				var declineCount=declineArray[0].inc;							// declineCount 用來計數時間是 declineTime 時下跌的家數
+				var declineVolume=declineArray[0].volume;					// declineVolume 用來計數時間是 declineTime 時下跌家數的總成交量
+
+				for (var i=1;i<declineArray.length;i++) {
+				  if (declineArray[i].time===declineTime) {				// 如果時間相同
+				    declineCount=declineCount+declineArray[i].inc;// 增加下跌家數的計數值
+				    declineVolume=declineVolume+declineArray[i].volume;
+				  } else {																				// 如果時間不相同
+				    declineCountArray.push(												// 將目前的下跌家數計數值及總成交量值堆入 declineCountArray 中
+				      {
+				        "time":declineTime,
+				        "count":declineCount,
+				        "volume":declineVolume
+				      }
+				    );
+				    declineTime=declineArray[i].time;							// 重置計數時間
+				    declineCount=declineArray[i].inc;							// 重置計數下跌家數
+				    declineVolume=declineArray[i].volume;					// 重置下跌家數總成交量
+				  }
+				}
+
+				/* declineCountArray.length 和 marketDayHistoryObject.historyDataArray.length
+				 * 會差一天，原因是從第二天開始才能判斷漲跌。
+				 * 因此 declineCountArray 中的元素要放入到 totalDaydeclineArray
+				 * 及 totalDaydeclineVolumeArray 中時，index 要相差 1。
+				 */
+
+				 for (var i=0;i<declineCountArray.length;i++) {
+				   totalDayDeclineArray[i+1]=declineCountArray[i].count;
+				   totalDayDeclineVolumeArray[i+1]=declineCountArray[i].volume/100000000;
+				 }
+
+				/* 印出漲跌基本資料 */
+
+				showMessage("上漲基本資料："+"\n");
+				appendMessage("時間\t\t漲家數\t跌家數\t漲家成交量(億)\t跌家成交量(億)\t總成交量(億)\n")
+				for (var i=0;i<totalDayAdvanceArray.length;i++) {
+					appendMessage(
+						marketDayHistoryObject.historyDataArray[i].time+"\t"+
+						totalDayAdvanceArray[i]+"\t"+
+						totalDayDeclineArray[i]+"\t"+
+						totalDayAdvanceVolumeArray[i].toFixed(2)+"\t\t"+
+						totalDayDeclineVolumeArray[i].toFixed(2)+"\t\t"+
+						marketDayHistoryObject.historyDataArray[i].volume+"\n"
+					);
+				}
 		}
+	}
+
+	/* 函式 calcAdvDecArray 用來計算每日/每週/每月
+	 * 上漲/下跌家數等基本資料的陣列。
+	 */
+
+	function calcAdvDecArray() {
+		calcDayAdvDecArray();
 	}
 
 	function calcMomentumIndicator() {
@@ -177,7 +354,7 @@ window.onload=function() {
 	}
 
 	/* 函式 createCompanyHistoryObjectCallback 是由使用者選擇公司
-	 * ID 或大盤之後，產生出該公司歷史資訊的 companyHistoryObject 
+	 * ID 或大盤之後，產生出該公司歷史資訊的 companyHistoryObject
 	 * 物件被呼叫的函式。此時就可以用此歷史資訊物件來進行列出動能
 	 * 指標的工作。
 	 */
@@ -188,7 +365,7 @@ window.onload=function() {
 			 * 呼叫 updateButton.onclick() 函式後，不會再
 			 * 回到此函式中，因此設定 startButtonPressed
 			 * 變數為 true ，表示是由於使用者按下『開始
-			 * 列出動能指標』所造成的更新。 
+			 * 列出動能指標』所造成的更新。
 			 */
 			startButtonPressed=true;
 			updateButton.onclick();
@@ -200,7 +377,7 @@ window.onload=function() {
   	function windowOnResize() {
     		messageBox.style.overflow="scroll";
     		messageBox.style.width=window.innerWidth-15;
-    		messageBox.style.height=window.innerHeight-messageBox.offsetTop-15;    
+    		messageBox.style.height=window.innerHeight-messageBox.offsetTop-15;
   	}
 
   	function showInterface() {
@@ -244,7 +421,7 @@ window.onload=function() {
 		updateButton=document.getElementById("updateButton");
 
 		/* 設定使用者操作介面的初始狀態。 */
-		
+
 		clearButton.onclick=function () {
 			showMessage("");
 		}
@@ -254,7 +431,7 @@ window.onload=function() {
         window.onresize=windowOnResize;
         windowOnResize();
 
-		/* 設定下載資料形式的圓鈕之事件處理程式。 
+		/* 設定下載資料形式的圓鈕之事件處理程式。
 		 * 共有三種下載資料的形式，使用者按下其中一個圓鈕時，
 		 * 將會設定 historyType 為不同的值，如下：
 		 *
@@ -265,10 +442,10 @@ window.onload=function() {
 		 * 預設是下載每日資料，所以一開始要按一下『每日資料』
 		 * 的圓鈕。
 		 */
-		
+
 		dayRadio.onclick=function() {
 			historyType="d";
-		};		
+		};
 		weekRadio.onclick=function() {
 			historyType="w";
 		};
@@ -282,7 +459,7 @@ window.onload=function() {
 		twMarketCheckbox.click();
 		idText.value="";
 		companyText.value="";
-		
+
 		/* 如果使用者勾選『大盤』核取按鈕，則清空 idText 文字盒 */
 
 		twMarketCheckbox.onclick=function () {
@@ -424,7 +601,7 @@ window.onload=function() {
 				index++;
 				showMessage("更新所有公司每週歷史資料中，請稍候...\n"+
 				    	    "index="+index+"\n");
-				if (index==totalCompany) {	
+				if (index==totalCompany) {
 					/* 所有公司每週歷史資訊更新完畢，重新設定
 					 * index ，呼叫 newCompanyMonthHistoryCallback
 					 * 函式開始更新第一家公司的每月歷史資訊。
@@ -482,7 +659,7 @@ window.onload=function() {
 
 			/* 呼叫 newCompanyDayHistoryCallback 開始更新第一家公司的每
 			 * 日歷史資訊。index 是目前要更新的公司在 savedCompanyArray
-			 * 中的 index 值減去 1，初始時 index=-1 ，在進到 
+			 * 中的 index 值減去 1，初始時 index=-1 ，在進到
 			 * newCompanyDayHistoryCallback 函式中後會加 1，所以第一家公
 			 * 司的 index 是 0。
 			 */
@@ -508,7 +685,7 @@ window.onload=function() {
 							createCompanyHistoryObjectCallback
 						);
 			} else if (idText.value!=="") {
-				
+
 				/* 如果使用者輸入了公司的代號，則從 savedCompanyArray 中
 				 * 查尋是否有該公司代號的公司存在。
 				 */
@@ -560,7 +737,7 @@ window.onload=function() {
 						);
 				} else {
 					appendMessage("無該公司代號之公司，請重新輸入代號!\n");
-				}	
+				}
 			} else {
 				/* 如果使用者輸入了公司的名稱，則從 savedCompanyArray 中
 				 * 查尋是否有該公司名稱的公司存在。
@@ -613,7 +790,7 @@ window.onload=function() {
 						);
 				} else {
 					appendMessage("無該公司名稱之公司，請重新輸入代號!\n");
-				}	
+				}
 			}
 		};
 
@@ -639,7 +816,7 @@ window.onload=function() {
 		companyButton.removeAttribute("disabled");
 	}
 
-	/* 函式 saveCompanyDataCallback 是將各公司名稱及代號資料存入 
+	/* 函式 saveCompanyDataCallback 是將各公司名稱及代號資料存入
 	 * company.txt 檔案中後呼叫的函式。在此函式中，為每家公司建立
 	 * 一個目錄，並在其中存入一個 name.txt 檔案，此檔案中是各公司
 	 * 的所屬名稱。到此每家公司都有自己的目錄了，程式就可以用此目
@@ -673,7 +850,7 @@ window.onload=function() {
 	/* 函式 getCompanyArrayCallback 是下載全部類別網頁完成後，並分析
 	 * 出各公司的名稱、代號及類別後，被呼叫的函式。
 	 * 傳入的參數 companyArray 是各公司前述資料的物件之陣列，此函式中
-	 * 將 companyArray 陣列傳給 saveCompanyData 函式存下 company.txt 
+	 * 將 companyArray 陣列傳給 saveCompanyData 函式存下 company.txt
 	 * 檔。存檔完畢後，呼叫 saveCompanyDataCallback 函式繼續後續的工作。
 	 */
 
@@ -752,7 +929,7 @@ window.onload=function() {
 			}
 			savedCompanyArray=companyArray;
 			totalCompany=savedCompanyArray.length;
-			saveNameFileCallback();	
+			saveNameFileCallback();
 		}
 	}
 
