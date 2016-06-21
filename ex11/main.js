@@ -192,6 +192,17 @@ window.onload=function() {
 				totalDayDeclineVolumeArray.push(0);
 			}
 
+			/* 把 marketDayHistoryObject.historyDataArray 陣列中的元素
+			 * 物件的時間(time)單獨抽出來成為陣列。用在後面 advanceArray
+			 * 中的時間(time)能較快速的找出對應到 historyDataArray 的 index
+			 */
+
+			var timeArray=[];
+			for (var i=0;i<marketDayHistoryObject.historyDataArray.length;i++) {
+				var time=marketDayHistoryObject.historyDataArray[i].time;
+				timeArray.push(time);
+			}
+
 			/* 將每一家公司的每一天漲跌暫時先放入 advanceArray 及
 			 * declineArray 中，放入這二個陣列中的是如下的物件：
 			 *	{"time":時間,"inc":增加值,"Volume":成交量}
@@ -209,6 +220,10 @@ window.onload=function() {
 			 	 var oneCompanyDayHistory=companyDayHistoryObjectArray[i];
 				 var companyName=oneCompanyDayHistory.companyName;
 				 var dayHistoryData=oneCompanyDayHistory.historyDataArray;
+				 if (dayHistoryData.length<=1) {
+					 /* 如果新上市的公司只有一天的資料，不能判斷漲跌資訊 */
+					 continue;
+				 }
 				 var prevClose=dayHistoryData[0].close;				// 取得第一天的收盤價
 				 for (var k=1;k<dayHistoryData.length;k++) {	// 由第二天起判斷漲跌
 					 var oneData=dayHistoryData[k];							// 得到一天的資料
@@ -276,16 +291,32 @@ window.onload=function() {
 						advanceVolume=advanceArray[i].volume;					// 重置上漲家數總成交量
 					}
 				}
+				/* 最後一天的累計要推入 */
+				advanceCountArray.push(												// 將目前的上漲家數計數值及總成交量值堆入 advanceCountArray 中
+					{
+						"time":advanceTime,
+						"count":advanceCount,
+						"volume":advanceVolume
+					}
+				);
 
-				/* advanceCountArray.length 和 marketDayHistoryObject.historyDataArray.length
-				 * 會差一天，原因是從第二天開始才能判斷漲跌。
-				 * 因此 advanceCountArray 中的元素要放入到 totalDayAdvanceArray
-				 * 及 totalDayAdvanceVolumeArray 中時，index 要相差 1。
+				/* advanceCountArray 陣列的內容目前是各個『時間』時，上漲家數的總合及
+				 * 上漲家數總成交量的總合。只要把時間 time 找出它在 timeArray 的 index
+				 * 即可將上述資訊放入到 totalDayAdvanceArray 及 totalDayAdvanceVolumeArray
+				 * 相對應的 index 位置中。
+				 * 找出 time 在 timeArray 中的 index 只要用 indexOf 方法即可，一行
+				 * 程式就解決了，這是前面特別準備 timeArray 的原因。如果不這樣做，就要
+				 * 在 marketWeekHistoryObject.historyDataArray 陣列中一一比較各物
+				 * 件的 time 屬性，程式較煩鎖。
 				 */
 
 				for (var i=0;i<advanceCountArray.length;i++) {
-					totalDayAdvanceArray[i+1]=advanceCountArray[i].count;
-					totalDayAdvanceVolumeArray[i+1]=advanceCountArray[i].volume/100000000;
+					var time=advanceCountArray[i].time;
+					var index=timeArray.indexOf(time);
+					if (index>=0) {
+						totalDayAdvanceArray[index]=advanceCountArray[i].count;
+						totalDayAdvanceVolumeArray[index]=advanceCountArray[i].volume/100000000;
+					}
 				}
 
 				var declineTime=declineArray[0].time;							// declineTime 用來記錄要計算下跌家數的時間
@@ -309,21 +340,37 @@ window.onload=function() {
 				    declineVolume=declineArray[i].volume;					// 重置下跌家數總成交量
 				  }
 				}
+				/* 最後一天的累計要推入 */
+				declineCountArray.push(												// 將目前的下跌家數計數值及總成交量值堆入 declineCountArray 中
+					{
+						"time":declineTime,
+						"count":declineCount,
+						"volume":declineVolume
+					}
+				);
 
-				/* declineCountArray.length 和 marketDayHistoryObject.historyDataArray.length
-				 * 會差一天，原因是從第二天開始才能判斷漲跌。
-				 * 因此 declineCountArray 中的元素要放入到 totalDaydeclineArray
-				 * 及 totalDaydeclineVolumeArray 中時，index 要相差 1。
+				/* declineCountArray 陣列的內容目前是各個『時間』時，下跌家數的總合及
+				 * 下跌家數總成交量的總合。只要把時間 time 找出它在 timeArray 的 index
+				 * 即可將上述資訊放入到 totalDaydDeclineArray 及 totalDayDeclineVolumeArray
+				 * 相對應的 index 位置中。
+				 * 找出 time 在 timeArray 中的 index 只要用 indexOf 方法即可，一行
+				 * 程式就解決了，這是前面特別準備 timeArray 的原因。如果不這樣做，就要
+				 * 在 marketWeekHistoryObject.historyDataArray 陣列中一一比較各物
+				 * 件的 time 屬性，程式較煩鎖。
 				 */
 
-				 for (var i=0;i<declineCountArray.length;i++) {
-				   totalDayDeclineArray[i+1]=declineCountArray[i].count;
-				   totalDayDeclineVolumeArray[i+1]=declineCountArray[i].volume/100000000;
-				 }
+				for (var i=0;i<declineCountArray.length;i++) {
+				  var time=declineCountArray[i].time;
+				  var index=timeArray.indexOf(time);
+				  if (index>=0) {
+				    totalDayDeclineArray[index]=declineCountArray[i].count;
+				    totalDayDeclineVolumeArray[index]=declineCountArray[i].volume/100000000;
+				  }
+				}
 
 				/* 印出漲跌基本資料 */
 
-				showMessage("每日上漲下跌基本資料："+"\n");
+				appendMessage("每日上漲下跌基本資料："+"\n");
 				appendMessage("時間\t\t漲家數\t跌家數\t漲家成交量(億)\t跌家成交量(億)\t總成交量(億)\n")
 				for (var i=0;i<totalDayAdvanceArray.length;i++) {
 					appendMessage(
@@ -372,6 +419,17 @@ window.onload=function() {
 				totalWeekDeclineVolumeArray.push(0);
 			}
 
+			/* 把 marketWeekHistoryObject.historyDataArray 陣列中的元素
+			 * 物件的時間(time)單獨抽出來成為陣列。用在後面 advanceArray
+			 * 中的時間(time)能較快速的找出對應到 historyDataArray 的 index
+			 */
+
+			var timeArray=[];
+			for (var i=0;i<marketWeekHistoryObject.historyDataArray.length;i++) {
+				var time=marketWeekHistoryObject.historyDataArray[i].time;
+				timeArray.push(time);
+			}
+
 			/* 將每一家公司的每一週漲跌暫時先放入 advanceArray 及
 			 * declineArray 中，放入這二個陣列中的是如下的物件：
 			 *	{"time":時間,"inc":增加值,"Volume":成交量}
@@ -389,6 +447,10 @@ window.onload=function() {
 				var oneCompanyWeekHistory=companyWeekHistoryObjectArray[i];
 				var companyName=oneCompanyWeekHistory.companyName;
 				var weekHistoryData=oneCompanyWeekHistory.historyDataArray;
+				if (weekHistoryData.length<=1) {
+					/* 如果新上市的公司只有一週的資料，不能判斷漲跌資訊 */
+					continue;
+				}
 				var prevClose=weekHistoryData[0].close;				// 取得第一週的收盤價
 				for (var k=1;k<weekHistoryData.length;k++) {	// 由第二週起判斷漲跌
 					var oneData=weekHistoryData[k];							// 得到一週的資料
@@ -456,17 +518,36 @@ window.onload=function() {
 					advanceVolume=advanceArray[i].volume;					// 重置上漲家數總成交量
 				}
 			}
+			/* 最後一週的累計要推入 */
+			advanceCountArray.push(												// 將目前的上漲家數計數值及總成交量值堆入 advanceCountArray 中
+				{
+					"time":advanceTime,
+					"count":advanceCount,
+					"volume":advanceVolume
+				}
+			);
 
-			/* advanceCountArray.length 和 marketWeekHistoryObject.historyDataArray.length
-			 * 會差一天，原因是從第二週開始才能判斷漲跌。
-			 * 因此 advanceCountArray 中的元素要放入到 totalWeekAdvanceArray
-			 * 及 totalWeekAdvanceVolumeArray 中時，index 要相差 1。
+			/* advanceCountArray 陣列的內容目前是各個『時間』時，上漲家數的總合及
+			 * 上漲家數總成交量的總合。只要把時間 time 找出它在 timeArray 的 index
+			 * 即可將上述資訊放入到 totalWeekAdvanceArray 及 totalWeekAdvanceVolumeArray
+			 * 相對應的 index 位置中。
+			 * 找出 time 在 timeArray 中的 index 只要用 indexOf 方法即可，一行
+			 * 程式就解決了，這是前面特別準備 timeArray 的原因。如果不這樣做，就要
+			 * 在 marketWeekHistoryObject.historyDataArray 陣列中一一比較各物
+			 * 件的 time 屬性，程式較煩鎖。
 			 */
 
 			for (var i=0;i<advanceCountArray.length;i++) {
-				totalWeekAdvanceArray[i+1]=advanceCountArray[i].count;
-				totalWeekAdvanceVolumeArray[i+1]=advanceCountArray[i].volume/100000000;
+				var time=advanceCountArray[i].time;
+				var index=timeArray.indexOf(time);
+
+				if (index>=0) {
+					totalWeekAdvanceArray[index]=advanceCountArray[i].count;
+					totalWeekAdvanceVolumeArray[index]=advanceCountArray[i].volume/100000000;
+				}
 			}
+
+			/* 接著處理下跌的資訊 */
 
 			var declineTime=declineArray[0].time;							// declineTime 用來記錄要計算下跌家數的時間
 			var declineCount=declineArray[0].inc;							// declineCount 用來計數時間是 declineTime 時下跌的家數
@@ -489,21 +570,37 @@ window.onload=function() {
 			    declineVolume=declineArray[i].volume;					// 重置下跌家數總成交量
 			  }
 			}
+			/* 最後一週的累計要推入 */
+			declineCountArray.push(												// 將目前的下跌家數計數值及總成交量值堆入 declineCountArray 中
+				{
+					"time":declineTime,
+					"count":declineCount,
+					"volume":declineVolume
+				}
+			);
 
-			/* declineCountArray.length 和 marketWeekHistoryObject.historyDataArray.length
-			 * 會差一天，原因是從第二天開始才能判斷漲跌。
-			 * 因此 declineCountArray 中的元素要放入到 totalWeekdeclineArray
-			 * 及 totalWeekdeclineVolumeArray 中時，index 要相差 1。
+			/* declineCountArray 陣列的內容目前是各個『時間』時，下跌家數的總合及
+			 * 下跌家數總成交量的總合。只要把時間 time 找出它在 timeArray 的 index
+			 * 即可將上述資訊放入到 totalWeekDeclineArray 及 totalWeekDeclineVolumeArray
+			 * 相對應的 index 位置中。
+			 * 找出 time 在 timeArray 中的 index 只要用 indexOf 方法即可，一行
+			 * 程式就解決了，這是前面特別準備 timeArray 的原因。如果不這樣做，就要
+			 * 在 marketWeekHistoryObject.historyDataArray 陣列中一一比較各物
+			 * 件的 time 屬性，程式較煩鎖。
 			 */
 
 			for (var i=0;i<declineCountArray.length;i++) {
-				totalWeekDeclineArray[i+1]=declineCountArray[i].count;
-			  totalWeekDeclineVolumeArray[i+1]=declineCountArray[i].volume/100000000;
+			  var time=declineCountArray[i].time;
+			  var index=timeArray.indexOf(time);
+			  if (index>=0) {
+			    totalWeekDeclineArray[index]=declineCountArray[i].count;
+			    totalWeekDeclineVolumeArray[index]=declineCountArray[i].volume/100000000;
+			  }
 			}
 
 			/* 印出漲跌基本資料 */
 
-			showMessage("每週上漲下跌基本資料："+"\n");
+			appendMessage("每週上漲下跌基本資料："+"\n");
 			appendMessage("時間\t\t漲家數\t跌家數\t漲家成交量(億)\t跌家成交量(億)\t總成交量(億)\n")
 			for (var i=0;i<totalWeekAdvanceArray.length;i++) {
 				appendMessage(
@@ -523,7 +620,7 @@ window.onload=function() {
 	 */
 
 	function calcAdvDecArray() {
-		// calcDayAdvDecArray();
+		calcDayAdvDecArray();
 		calcWeekAdvDecArray();
 	}
 
@@ -531,10 +628,28 @@ window.onload=function() {
 	}
 
 	function showMomentumIndicator() {
+
 		showMessage("開始列出動能指標。\n");
 		appendMessage("開始計算大盤的每日/每週/每月上漲下跌家數等資訊，請稍等...\n");
 		calcAdvDecArray();
 		appendMessage("計算大盤的每日/每週/每月上漲下跌家數等資訊完畢。\n");
+
+		/*
+		appendMessage("大盤資訊：\n");
+		for (var i=0;i<marketDayHistoryObject.historyDataArray.length;i++) {
+			var time=marketDayHistoryObject.historyDataArray[i].time;
+			var close=marketDayHistoryObject.historyDataArray[i].close;
+			appendMessage(time+"\t"+close+"\n");
+		}
+		var oneCompanyDayHistory=companyDayHistoryObjectArray[0];
+		var companyName=oneCompanyDayHistory.companyName;
+		appendMessage(companyName+"公司資訊：\n");
+		var dayHistoryData=oneCompanyDayHistory.historyDataArray;
+		for (var i=0;i<dayHistoryData.length;i++) {
+			var time=dayHistoryData[i].time;
+			var close=dayHistoryData[i].close;
+			appendMessage(time+"\t"+close+"\n");
+		}*/
 	}
 
 	/* 函式 createCompanyHistoryObjectCallback 是由使用者選擇公司
