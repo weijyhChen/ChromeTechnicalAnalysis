@@ -218,11 +218,13 @@ window.onload=function() {
 
 			 for (var i=0;i<totalCompany;i++) {							// 所有公司的每日歷史資訊都要處理
 			 	 var oneCompanyDayHistory=companyDayHistoryObjectArray[i];
-				 appendMessage(i);
 				 var companyName=oneCompanyDayHistory.companyName;
 				 var dayHistoryData=oneCompanyDayHistory.historyDataArray;
+				 if (dayHistoryData.length<=1) {
+					 /* 如果新上市的公司只有一天的資料，不能判斷漲跌資訊 */
+					 continue;
+				 }
 				 var prevClose=dayHistoryData[0].close;				// 取得第一天的收盤價
-				 appendMessage("\t"+companyName+"\t"+dayHistoryData.length+"\n");
 				 for (var k=1;k<dayHistoryData.length;k++) {	// 由第二天起判斷漲跌
 					 var oneData=dayHistoryData[k];							// 得到一天的資料
 					 var time=oneData.time;
@@ -242,10 +244,6 @@ window.onload=function() {
 								 "name":companyName
 							 }
 						 );
-						 /*
-						 if (i==794) {
-							 appendMessage(k+"\t"+time+"\t"+close+"\tadv\n");
-						 }*/
 					 } else if (close<prevClose) {							// 下跌
 						 declineArray.push(
 							 {
@@ -255,10 +253,6 @@ window.onload=function() {
 								 "name":companyName
 							 }
 						 );
-						 /*
-						 if (i==794) {
-							 appendMessage(k+"\t"+time+"\t"+close+"\tdec\n");
-						 }*/
 					 }
 					 prevClose=close;
 				 }
@@ -270,12 +264,8 @@ window.onload=function() {
 				* 成交量。
 				*/
 
-				appendMessage("before sorting, advanceArray.length="+advanceArray.length+"\n");
-
 				advanceArray.sort(timeCompare);
 				declineArray.sort(timeCompare);
-
-				appendMessage("after sorting, advanceArray.length="+advanceArray.length+"\n");
 
 				var advanceCountArray=[];
 				var declineCountArray=[];
@@ -310,8 +300,6 @@ window.onload=function() {
 					}
 				);
 
-				appendMessage("advanceCountArray.length="+advanceCountArray.length+"\n");
-
 				/* advanceCountArray 陣列的內容目前是各個『時間』時，上漲家數的總合及
 				 * 上漲家數總成交量的總合。只要把時間 time 找出它在 timeArray 的 index
 				 * 即可將上述資訊放入到 totalDayAdvanceArray 及 totalDayAdvanceVolumeArray
@@ -325,7 +313,6 @@ window.onload=function() {
 				for (var i=0;i<advanceCountArray.length;i++) {
 					var time=advanceCountArray[i].time;
 					var index=timeArray.indexOf(time);
-					appendMessage("advance i="+i+", time="+time+" ,index="+index+"\n");
 					if (index>=0) {
 						totalDayAdvanceArray[index]=advanceCountArray[i].count;
 						totalDayAdvanceVolumeArray[index]=advanceCountArray[i].volume/100000000;
@@ -375,7 +362,6 @@ window.onload=function() {
 				for (var i=0;i<declineCountArray.length;i++) {
 				  var time=declineCountArray[i].time;
 				  var index=timeArray.indexOf(time);
-					appendMessage("decline i="+i+", time="+time+" ,index="+index+"\n");
 				  if (index>=0) {
 				    totalDayDeclineArray[index]=declineCountArray[i].count;
 				    totalDayDeclineVolumeArray[index]=declineCountArray[i].volume/100000000;
@@ -461,6 +447,10 @@ window.onload=function() {
 				var oneCompanyWeekHistory=companyWeekHistoryObjectArray[i];
 				var companyName=oneCompanyWeekHistory.companyName;
 				var weekHistoryData=oneCompanyWeekHistory.historyDataArray;
+				if (weekHistoryData.length<=1) {
+					/* 如果新上市的公司只有一週的資料，不能判斷漲跌資訊 */
+					continue;
+				}
 				var prevClose=weekHistoryData[0].close;				// 取得第一週的收盤價
 				for (var k=1;k<weekHistoryData.length;k++) {	// 由第二週起判斷漲跌
 					var oneData=weekHistoryData[k];							// 得到一週的資料
@@ -631,7 +621,7 @@ window.onload=function() {
 
 	function calcAdvDecArray() {
 		calcDayAdvDecArray();
-		//calcWeekAdvDecArray();
+		calcWeekAdvDecArray();
 	}
 
 	function calcMomentumIndicator() {
@@ -640,17 +630,6 @@ window.onload=function() {
 	function showMomentumIndicator() {
 
 		showMessage("開始列出動能指標。\n");
-
-		var oneCompanyDayHistory=companyDayHistoryObjectArray[798];
-		var companyName=oneCompanyDayHistory.companyName;
-		appendMessage(companyName+"公司資訊：\n");
-		var dayHistoryData=oneCompanyDayHistory.historyDataArray;
-		for (var i=0;i<dayHistoryData.length;i++) {
-			var time=dayHistoryData[i].time;
-			var close=dayHistoryData[i].close;
-			appendMessage(i+"\t"+time+"\t"+close+"\n");
-		}
-
 		appendMessage("開始計算大盤的每日/每週/每月上漲下跌家數等資訊，請稍等...\n");
 		calcAdvDecArray();
 		appendMessage("計算大盤的每日/每週/每月上漲下跌家數等資訊完畢。\n");
