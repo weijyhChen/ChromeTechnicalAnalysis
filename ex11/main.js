@@ -213,15 +213,16 @@ window.onload=function() {
 			 * 相加，即可得到基本資料陣列的內容。
 			 */
 
-			 showMessage("");
 			 var advanceArray=[];
 			 var declineArray=[];
 
 			 for (var i=0;i<totalCompany;i++) {							// 所有公司的每日歷史資訊都要處理
 			 	 var oneCompanyDayHistory=companyDayHistoryObjectArray[i];
+				 appendMessage(i);
 				 var companyName=oneCompanyDayHistory.companyName;
 				 var dayHistoryData=oneCompanyDayHistory.historyDataArray;
 				 var prevClose=dayHistoryData[0].close;				// 取得第一天的收盤價
+				 appendMessage("\t"+companyName+"\t"+dayHistoryData.length+"\n");
 				 for (var k=1;k<dayHistoryData.length;k++) {	// 由第二天起判斷漲跌
 					 var oneData=dayHistoryData[k];							// 得到一天的資料
 					 var time=oneData.time;
@@ -241,9 +242,10 @@ window.onload=function() {
 								 "name":companyName
 							 }
 						 );
-						 if (i==0) {
-							 appendMessage(k+"\tadv\t"+companyName+"\t"+time+"\t"+close+"\n");
-						 }
+						 /*
+						 if (i==794) {
+							 appendMessage(k+"\t"+time+"\t"+close+"\tadv\n");
+						 }*/
 					 } else if (close<prevClose) {							// 下跌
 						 declineArray.push(
 							 {
@@ -253,9 +255,10 @@ window.onload=function() {
 								 "name":companyName
 							 }
 						 );
-						 if (i==0) {
-							 appendMessage(k+"\tdec\t"+companyName+"\t"+time+"\t"+close+"\n");
-						 }
+						 /*
+						 if (i==794) {
+							 appendMessage(k+"\t"+time+"\t"+close+"\tdec\n");
+						 }*/
 					 }
 					 prevClose=close;
 				 }
@@ -267,8 +270,12 @@ window.onload=function() {
 				* 成交量。
 				*/
 
+				appendMessage("before sorting, advanceArray.length="+advanceArray.length+"\n");
+
 				advanceArray.sort(timeCompare);
 				declineArray.sort(timeCompare);
+
+				appendMessage("after sorting, advanceArray.length="+advanceArray.length+"\n");
 
 				var advanceCountArray=[];
 				var declineCountArray=[];
@@ -302,6 +309,8 @@ window.onload=function() {
 						"volume":advanceVolume
 					}
 				);
+
+				appendMessage("advanceCountArray.length="+advanceCountArray.length+"\n");
 
 				/* advanceCountArray 陣列的內容目前是各個『時間』時，上漲家數的總合及
 				 * 上漲家數總成交量的總合。只要把時間 time 找出它在 timeArray 的 index
@@ -629,10 +638,24 @@ window.onload=function() {
 	}
 
 	function showMomentumIndicator() {
+
 		showMessage("開始列出動能指標。\n");
+
+		var oneCompanyDayHistory=companyDayHistoryObjectArray[798];
+		var companyName=oneCompanyDayHistory.companyName;
+		appendMessage(companyName+"公司資訊：\n");
+		var dayHistoryData=oneCompanyDayHistory.historyDataArray;
+		for (var i=0;i<dayHistoryData.length;i++) {
+			var time=dayHistoryData[i].time;
+			var close=dayHistoryData[i].close;
+			appendMessage(i+"\t"+time+"\t"+close+"\n");
+		}
+
 		appendMessage("開始計算大盤的每日/每週/每月上漲下跌家數等資訊，請稍等...\n");
 		calcAdvDecArray();
 		appendMessage("計算大盤的每日/每週/每月上漲下跌家數等資訊完畢。\n");
+
+		/*
 		appendMessage("大盤資訊：\n");
 		for (var i=0;i<marketDayHistoryObject.historyDataArray.length;i++) {
 			var time=marketDayHistoryObject.historyDataArray[i].time;
@@ -647,7 +670,7 @@ window.onload=function() {
 			var time=dayHistoryData[i].time;
 			var close=dayHistoryData[i].close;
 			appendMessage(time+"\t"+close+"\n");
-		}
+		}*/
 	}
 
 	/* 函式 createCompanyHistoryObjectCallback 是由使用者選擇公司
