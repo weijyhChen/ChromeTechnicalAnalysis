@@ -100,6 +100,9 @@ var totalMonthDeclineVolumeArray=[];
 
 var AbiMaArray=[];
 
+/* adlArray 陣列用來存放和大盤相關的騰落指標( */
+var adlArray=[];
+
 /* 本範例的進入點是此處的 window.onload 函式。 */
 
 window.onload=function() {
@@ -905,8 +908,35 @@ window.onload=function() {
 		}
 	}
 
+	function calcAdlArray() {
+		adlArray=[];
+		var totalAdvanceArray=[];
+		var totalDeclineArray=[];
+		/* 根據 historyType 決定要用哪個歷史資料陣列做計算 */
+		if (historyType=="d") {
+			totalAdvanceArray=totalDayAdvanceArray;
+			totalDeclineArray=totalDayDeclineArray;
+		} else if (historyType=="w") {
+			totalAdvanceArray=totalWeekAdvanceArray;
+			totalDeclineArray=totalWeekDeclineArray;
+		} else if (historyType=="m") {
+			totalAdvanceArray=totalMonthAdvanceArray;
+			totalDeclineArray=totalMonthDeclineArray;
+		}
+		if ((totalAdvanceArray.length==0)||(totalDeclineArray.length==0)) {
+			/* 如果歷史資料陣列為 0 則不能算大盤動能資料 */
+			return;
+		}
+		var sumAdl=0;
+		for (var i=0;i<totalAdvanceArray.length;i++) {
+			sumAdl=sumAdl+(totalAdvanceArray[i]-totalDeclineArray[i]);
+			adlArray.push(sumAdl);
+		}
+	}
+
 	function calcMomentumIndicator() {
 		calcABIArray();
+		calcAdlArray();
 	}
 
 	function showMomentumIndicator() {
@@ -918,8 +948,8 @@ window.onload=function() {
 		calcMomentumIndicator();
 		appendMessage("計算各種動能指標完畢，印出各種動能指標。");
 		/* 印出 ABI 移動平均值 */
-		for (var i=0;i<AbiMaArray.length;i++) {
-			appendMessage(i+"\t"+(AbiMaArray[i]*100).toFixed(2)+"%\n");
+		for (var i=0;i<adlArray.length;i++) {
+			appendMessage(i+"\t"+adlArray[i]+"\n");
 		}
 	}
 
