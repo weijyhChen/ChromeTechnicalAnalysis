@@ -828,7 +828,7 @@ window.onload=function() {
 	      }
 	    }
 	  }
-		
+
 		/* 印出漲跌基本資料 */
 
 		appendMessage("每月上漲下跌基本資料："+"\n");
@@ -860,27 +860,13 @@ window.onload=function() {
 
 	function showMomentumIndicator() {
 
-		showMessage("開始列出動能指標。\n");
+		showMessage("");
 		appendMessage("開始計算大盤的每日/每週/每月上漲下跌家數等資訊，請稍等...\n");
 		calcAdvDecArray();
 		appendMessage("計算大盤的每日/每週/每月上漲下跌家數等資訊完畢。\n");
-
-		/*
-		appendMessage("大盤資訊：\n");
-		for (var i=0;i<marketDayHistoryObject.historyDataArray.length;i++) {
-			var time=marketDayHistoryObject.historyDataArray[i].time;
-			var close=marketDayHistoryObject.historyDataArray[i].close;
-			appendMessage(time+"\t"+close+"\n");
-		}
-		var oneCompanyDayHistory=companyDayHistoryObjectArray[0];
-		var companyName=oneCompanyDayHistory.companyName;
-		appendMessage(companyName+"公司資訊：\n");
-		var dayHistoryData=oneCompanyDayHistory.historyDataArray;
-		for (var i=0;i<dayHistoryData.length;i++) {
-			var time=dayHistoryData[i].time;
-			var close=dayHistoryData[i].close;
-			appendMessage(time+"\t"+close+"\n");
-		}*/
+		appendMessage("開始計算各種動能指標，請稍等...\n");
+		calcMomentumIndicator();
+		appendMessage("計算各種動能指標完畢，印出各種動能指標。");
 	}
 
 	/* 函式 createCompanyHistoryObjectCallback 是由使用者選擇公司
