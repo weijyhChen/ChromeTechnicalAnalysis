@@ -94,9 +94,11 @@ var totalWeekDeclineVolumeArray=[];
 
 var totalMonthDeclineVolumeArray=[];
 
-/* ABIArray 陣列用來儲存和大盤相關的絕對廣量指標(Absolute Breadth Index,ABI)*/
+/* AbiMaArray 陣列用來儲存和大盤相關的絕對廣量指標(Absolute Breadth Index,ABI)
+ * 10 天/週/月的移動平均值。
+ */
 
-var ABIArray=[];
+var AbiMaArray=[];
 
 /* 本範例的進入點是此處的 window.onload 函式。 */
 
@@ -862,7 +864,8 @@ window.onload=function() {
 	/* 函式 clacABIArray 用來計算和大盤有關的絕對廣量指標(Absolute Breadth Index,ABI) */
 
 	function calcABIArray() {
-		ABIArray=[];
+		AbiMaArray=[];
+		var ABIArray=[];
 		var totalAdvanceArray=[];
 		var totalDeclineArray=[];
 		/* 根據 historyType 決定要用哪個歷史資料陣列做計算 */
@@ -876,15 +879,34 @@ window.onload=function() {
 			totalAdvanceArray=totalMonthAdvanceArray;
 			totalDeclineArray=totalMonthDeclineArray;
 		}
-		if ()(totalAdvanceArray.length==0)||(totalDeclineArray.length==0)) {
+		if ((totalAdvanceArray.length==0)||(totalDeclineArray.length==0)) {
 			/* 如果歷史資料陣列為 0 則不能算大盤動能資料 */
 			return;
 		}
 		/* 開始計算動能資料陣列 */
-		
+		for (var i=0;i<totalAdvanceArray.length;i++) {
+			ABIArray.push(
+				Math.abs(totalAdvanceArray[i]-totalDeclineArray[i])/
+				totalCompany
+			);
+		}
+		/* 計算 10 天/週/月 平均線 */
+		for (i=0;i<ABIArray.length;i++) {
+			if (i<10) {
+				AbiMaArray.push(0);
+			} else {
+				var ma=0;
+				for (var k=0;k<10;k++) {
+					ma=ma+ABIArray[i-k];
+				}
+				ma=ma/10;
+				AbiMaArray.push(ma);
+			}
+		}
 	}
 
 	function calcMomentumIndicator() {
+		calcABIArray();
 	}
 
 	function showMomentumIndicator() {
@@ -895,6 +917,10 @@ window.onload=function() {
 		appendMessage("開始計算各種動能指標，請稍等...\n");
 		calcMomentumIndicator();
 		appendMessage("計算各種動能指標完畢，印出各種動能指標。");
+		/* 印出 ABI 移動平均值 */
+		for (var i=0;i<AbiMaArray.length;i++) {
+			appendMessage(i+"\t"+(AbiMaArray[i]*100).toFixed(2)+"%\n");
+		}
 	}
 
 	/* 函式 createCompanyHistoryObjectCallback 是由使用者選擇公司
