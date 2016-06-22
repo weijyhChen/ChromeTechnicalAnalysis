@@ -94,6 +94,10 @@ var totalWeekDeclineVolumeArray=[];
 
 var totalMonthDeclineVolumeArray=[];
 
+/* ABIArray 陣列用來儲存和大盤相關的絕對廣量指標(Absolute Breadth Index,ABI)*/
+
+var ABIArray=[];
+
 /* 本範例的進入點是此處的 window.onload 函式。 */
 
 window.onload=function() {
@@ -855,11 +859,35 @@ window.onload=function() {
 		calcMonthAdvDecArray();
 	}
 
+	/* 函式 clacABIArray 用來計算和大盤有關的絕對廣量指標(Absolute Breadth Index,ABI) */
+
+	function calcABIArray() {
+		ABIArray=[];
+		var totalAdvanceArray=[];
+		var totalDeclineArray=[];
+		/* 根據 historyType 決定要用哪個歷史資料陣列做計算 */
+		if (historyType=="d") {
+			totalAdvanceArray=totalDayAdvanceArray;
+			totalDeclineArray=totalDayDeclineArray;
+		} else if (historyType=="w") {
+			totalAdvanceArray=totalWeekAdvanceArray;
+			totalDeclineArray=totalWeekDeclineArray;
+		} else if (historyType=="m") {
+			totalAdvanceArray=totalMonthAdvanceArray;
+			totalDeclineArray=totalMonthDeclineArray;
+		}
+		if ()(totalAdvanceArray.length==0)||(totalDeclineArray.length==0)) {
+			/* 如果歷史資料陣列為 0 則不能算大盤動能資料 */
+			return;
+		}
+		/* 開始計算動能資料陣列 */
+		
+	}
+
 	function calcMomentumIndicator() {
 	}
 
 	function showMomentumIndicator() {
-
 		showMessage("");
 		appendMessage("開始計算大盤的每日/每週/每月上漲下跌家數等資訊，請稍等...\n");
 		calcAdvDecArray();
@@ -890,128 +918,128 @@ window.onload=function() {
 		}
 	}
 
-  	function windowOnResize() {
-    		messageBox.style.overflow="scroll";
-    		messageBox.style.width=window.innerWidth-15;
-    		messageBox.style.height=window.innerHeight-messageBox.offsetTop-15;
-  	}
+  function windowOnResize() {
+  	messageBox.style.overflow="scroll";
+  	messageBox.style.width=window.innerWidth-15;
+    messageBox.style.height=window.innerHeight-messageBox.offsetTop-15;
+  }
 
   	function showInterface() {
 
-		/* 在 HTML 的 body 標記中插入使用者操作介面的元件標記。 */
-		/* 本範例的人機介面和前一個範例幾乎一樣，唯一的不同只有把
-		 * 顯示 K 線圖的 canvas 去除。因為用到的資料和前一個範例
-		 * 完全一樣，只是前一個範例是畫 K 線圖，此範例是列出動能
-		 * 指標而已。
-		 */
+			/* 在 HTML 的 body 標記中插入使用者操作介面的元件標記。 */
+			/* 本範例的人機介面和前一個範例幾乎一樣，唯一的不同只有把
+		 	 * 顯示 K 線圖的 canvas 去除。因為用到的資料和前一個範例
+		 	 * 完全一樣，只是前一個範例是畫 K 線圖，此範例是列出動能
+		 	 * 指標而已。
+		 	 */
 
     	document.body.innerHTML=
-		"<p>請輸入股票代號：<input type=text size=6 id='idText' name='id'>&nbsp或者&nbsp"+
-		"公司名稱：<input type=text size=6 id='companyText' name='company'>&nbsp或者&nbsp"+
-		"<input type=checkbox id='twMarketCheckbox' name='tw-market'>大盤&nbsp&nbsp"+
-		"<input type=button id='companyButton' value='公司代號列表'>&nbsp&nbsp"+
-		"<input type=button id='updateButton' value='更新所有公司歷史資訊'></p>"+
-		"<p>繪圖的形式："+
-		"<input type=radio id='dayRadio' name='type'>每日資料"+
-		"<input type=radio id='weekRadio' name='type'>每週資料"+
-		"<input type=radio id='monthRadio' name='type'>每月資料&nbsp&nbsp"+
-		"<input type=button id='startButton' value='開始列出動能指標'>&nbsp&nbsp"+
-		"<input type=button id='clearButton' value='清除訊息'></p>"+
+			"<p>請輸入股票代號：<input type=text size=6 id='idText' name='id'>&nbsp或者&nbsp"+
+			"公司名稱：<input type=text size=6 id='companyText' name='company'>&nbsp或者&nbsp"+
+			"<input type=checkbox id='twMarketCheckbox' name='tw-market'>大盤&nbsp&nbsp"+
+			"<input type=button id='companyButton' value='公司代號列表'>&nbsp&nbsp"+
+			"<input type=button id='updateButton' value='更新所有公司歷史資訊'></p>"+
+			"<p>繪圖的形式："+
+			"<input type=radio id='dayRadio' name='type'>每日資料"+
+			"<input type=radio id='weekRadio' name='type'>每週資料"+
+			"<input type=radio id='monthRadio' name='type'>每月資料&nbsp&nbsp"+
+			"<input type=button id='startButton' value='開始列出動能指標'>&nbsp&nbsp"+
+			"<input type=button id='clearButton' value='清除訊息'></p>"+
       		"<p><pre id='msg'>請輸入公司代號或勾選『大盤』，"+
 			"然後按下『開始列出動能指標』按鈕\n</pre></p>";
 
-		/* 利用 getElementById 取得使用者操作介面元件在 JavaScript
-		 * 語言中的物件，並存於區域變數中。
-		 */
+			/* 利用 getElementById 取得使用者操作介面元件在 JavaScript
+		 	 * 語言中的物件，並存於區域變數中。
+		 	 */
 
-		idText=document.getElementById("idText");
-		companyText=document.getElementById("companyText");
-		twMarketCheckbox=document.getElementById("twMarketCheckbox");
-		dayRadio=document.getElementById("dayRadio");
-		weekRadio=document.getElementById("weekRadio");
-		monthRadio=document.getElementById("monthRadio");
-		startButton=document.getElementById("startButton");
-		clearButton=document.getElementById("clearButton");
-		messageBox=document.getElementById("msg");
-		companyButton=document.getElementById("companyButton");
-		updateButton=document.getElementById("updateButton");
+			idText=document.getElementById("idText");
+			companyText=document.getElementById("companyText");
+			twMarketCheckbox=document.getElementById("twMarketCheckbox");
+			dayRadio=document.getElementById("dayRadio");
+			weekRadio=document.getElementById("weekRadio");
+			monthRadio=document.getElementById("monthRadio");
+			startButton=document.getElementById("startButton");
+			clearButton=document.getElementById("clearButton");
+			messageBox=document.getElementById("msg");
+			companyButton=document.getElementById("companyButton");
+			updateButton=document.getElementById("updateButton");
 
-		/* 設定使用者操作介面的初始狀態。 */
+			/* 設定使用者操作介面的初始狀態。 */
 
-		clearButton.onclick=function () {
-			showMessage("");
-		}
-
-		/* 設定『訊息盒』的大小。 */
-
-        window.onresize=windowOnResize;
-        windowOnResize();
-
-		/* 設定下載資料形式的圓鈕之事件處理程式。
-		 * 共有三種下載資料的形式，使用者按下其中一個圓鈕時，
-		 * 將會設定 historyType 為不同的值，如下：
-		 *
-		 * 	每日資料：historyType 是 "d"
-		 *	每週資料：historyType 是 "w"
-		 *	每月資料：historyType 是 "m"
-		 *
-		 * 預設是下載每日資料，所以一開始要按一下『每日資料』
-		 * 的圓鈕。
-		 */
-
-		dayRadio.onclick=function() {
-			historyType="d";
-		};
-		weekRadio.onclick=function() {
-			historyType="w";
-		};
-		monthRadio.onclick=function() {
-			historyType="m";
-		};
-		dayRadio.click();
-
-		/* 預設是繪製大盤 K 線圖 */
-
-		twMarketCheckbox.click();
-		idText.value="";
-		companyText.value="";
-
-		/* 如果使用者勾選『大盤』核取按鈕，則清空 idText 文字盒 */
-
-		twMarketCheckbox.onclick=function () {
-			if (twMarketCheckbox.checked) {
-				idText.value="";
-				companyText.value="";
+			clearButton.onclick=function () {
+				showMessage("");
 			}
-		};
 
-		/* 如果使用者輸入公司 ID ，則取消『大盤』核取盒的勾選 */
+			/* 設定『訊息盒』的大小。 */
 
-		idText.onkeydown=function() {
-			twMarketCheckbox.checked=false;
-			companyText.value="";
-		};
+      window.onresize=windowOnResize;
+      windowOnResize();
 
-		companyText.onkeydown=function() {
-			twMarketCheckbox.checked=false;
+			/* 設定下載資料形式的圓鈕之事件處理程式。
+			 * 共有三種下載資料的形式，使用者按下其中一個圓鈕時，
+			 * 將會設定 historyType 為不同的值，如下：
+		 	 *
+		 	 * 	每日資料：historyType 是 "d"
+		 	 *	每週資料：historyType 是 "w"
+		 	 *	每月資料：historyType 是 "m"
+		 	 *
+		 	 * 預設是下載每日資料，所以一開始要按一下『每日資料』
+		 	 * 的圓鈕。
+		 	 */
+
+			dayRadio.onclick=function() {
+				historyType="d";
+			};
+			weekRadio.onclick=function() {
+				historyType="w";
+			};
+			monthRadio.onclick=function() {
+				historyType="m";
+			};
+			dayRadio.click();
+
+			/* 預設是繪製大盤 K 線圖 */
+
+			twMarketCheckbox.click();
 			idText.value="";
-		};
+			companyText.value="";
+
+			/* 如果使用者勾選『大盤』核取按鈕，則清空 idText 文字盒 */
+
+			twMarketCheckbox.onclick=function () {
+				if (twMarketCheckbox.checked) {
+					idText.value="";
+					companyText.value="";
+				}
+			};
+
+			/* 如果使用者輸入公司 ID ，則取消『大盤』核取盒的勾選 */
+
+			idText.onkeydown=function() {
+				twMarketCheckbox.checked=false;
+				companyText.value="";
+			};
+
+			companyText.onkeydown=function() {
+				twMarketCheckbox.checked=false;
+				idText.value="";
+			};
 
 
-		/* 按下『公司代號列表』按鈕後執行的函式 */
+			/* 按下『公司代號列表』按鈕後執行的函式 */
 
-		companyButton.onclick=function () {
-			showMessage("公司代號列表：\n");
-			for (var i=0;i<totalCompany;i++) {
-				appendMessage("\t"+savedCompanyArray[i].companyName+
+			companyButton.onclick=function () {
+				showMessage("公司代號列表：\n");
+				for (var i=0;i<totalCompany;i++) {
+					appendMessage("\t"+savedCompanyArray[i].companyName+
 					      "\t"+savedCompanyArray[i].companyID+
 					      "\n");
-			}
-		};
+				}
+			};
 
-		/* 按下『更新所有公司歷史資訊』按鈕後執行的函式 */
+			/* 按下『更新所有公司歷史資訊』按鈕後執行的函式 */
 
-		updateButton.onclick=function () {
+			updateButton.onclick=function () {
 			var index=-1;
 
 			/* 開始更新資料後，不可以按下『開始繪圖』等按鈕 */
@@ -1313,7 +1341,7 @@ window.onload=function() {
 		startButton.setAttribute("disabled","true");
 		updateButton.setAttribute("disabled","true");
 		companyButton.setAttribute("disabled","true");
-  	}
+  }
 
 	/* 函式 saveNameFileCallback 是在每各公司目錄建立完畢，並且在
 	 * 各公司目錄下存入 name.txt 檔案後被呼叫的函式。至此，第一次
