@@ -91,6 +91,12 @@ var adlArray=[];
 /* adrMaArray 陣列用來存放和大盤相關的漲跌比率(Advance/Decline Ratio)的15天/週/月的移動平均值。 */
 var adrMaArray=[];
 
+/* advVolumeMaArray 陣列用來存放和大盤相關的上漲成交量(Advancing Valume) */
+var advVolumeMaArray=[];
+
+/* decVolumeMaArray 陣列用來存放和大盤相關的下跌成交量(Declining Valume) */
+var decVolumeMaArray=[];
+
 /* 本範例的進入點是此處的 window.onload 函式。 */
 
 window.onload=function() {
@@ -789,6 +795,8 @@ window.onload=function() {
 
 	var totalAdvanceArray=[];
 	var totalDeclineArray=[];
+	var totalAdvanceVolumeArray=[];
+	var totalDeclineVolumeArray=[];
 	/* 函式 determineCalcArray 用來決定計算各項動能指標時要用到的 totalAdvanceArray
 	 * 及 totalDeclineArray 陣列是指向哪個真正的陣列。
 	 */
@@ -797,12 +805,18 @@ window.onload=function() {
 		if (historyType=="d") {
 			totalAdvanceArray=totalDayAdvanceArray;
 			totalDeclineArray=totalDayDeclineArray;
+			totalAdvanceVolumeArray=totalDayAdvanceVolumeArray;
+			totalDeclineVolumeArray=totalDayDeclineVolumeArray;
 		} else if (historyType=="w") {
 			totalAdvanceArray=totalWeekAdvanceArray;
 			totalDeclineArray=totalWeekDeclineArray;
+			totalAdvanceVolumeArray=totalWeekAdvanceVolumeArray;
+			totalDeclineVolumeArray=totalWeekDeclineVolumeArray;
 		} else if (historyType=="m") {
 			totalAdvanceArray=totalMonthAdvanceArray;
 			totalDeclineArray=totalMonthDeclineArray;
+			totalAdvanceVolumeArray=totalMonthAdvanceVolumeArray;
+			totalDeclineVolumeArray=totalMonthDeclineVolumeArray;
 		}
 	}
 
@@ -855,6 +869,7 @@ window.onload=function() {
 	 */
 	function calcAdrArray() {
 		var adrArray=[];
+		adrMaArray=[];
 		if ((totalAdvanceArray.length==0)||(totalDeclineArray.length==0)) {
 			/* 如果歷史資料陣列為 0 則不能算大盤動能資料 */
 			return;
@@ -877,12 +892,49 @@ window.onload=function() {
 		}
 	}
 
+	/* 函式 calcAdvDecVolumeArray 用來計算和大盤有的上漲下跌量的10日/週/月移動平均線 */
+	function calcAdvDecVolumeArray() {
+		advVolumeMaArray=[];
+		decVolumeMaArray=[];
+		if ((totalAdvanceVolumeArray.length==0)||(totalDeclineVolumeArray.length==0)) {
+			/* 如果歷史資料陣列為 0 則不能算大盤動能資料 */
+			return;
+		}
+		/* 計算上漲成交量的10日/週/月移動平均值 */
+		for (var i=0;i<totalAdvanceVolumeArray.length;i++) {
+			if (i<10) {
+				advVolumeMaArray.push(0);
+			} else {
+				var ma=0;
+				for (var k=0;k<10;k++) {
+					ma=ma+totalAdvanceVolumeArray[i-k];
+				}
+				ma=ma/10;
+				advVolumeMaArray.push(ma);
+			}
+		}
+		/* 計算下跌成交量的10日/週/月移動平均值 */
+		for (var i=0;i<totalDeclineVolumeArray.length;i++) {
+			if (i<10) {
+				decVolumeMaArray.push(0);
+			} else {
+				var ma=0;
+				for (var k=0;k<10;k++) {
+					ma=ma+totalDeclineVolumeArray[i-k];
+				}
+				ma=ma/10;
+				decVolumeMaArray.push(ma);
+			}
+		}
+	}
+
 	/* 函式calcMomentumIndicator 用來集合呼叫各種計算動能指標函式 */
 	function calcMomentumIndicator() {
 		determineCalcArray();
 		calcABIArray();
 		calcAdlArray();
 		calcAdrArray();
+		calcAdvDecVolumeArray();
 	}
 
 	/* 函式 showMomentumIndicator 呼叫計算漲跌資訊的函式及計算各種動能指標的函式 */
@@ -893,10 +945,16 @@ window.onload=function() {
 		appendMessage("計算大盤的每日/每週/每月上漲下跌家數等資訊完畢。\n");
 		appendMessage("開始計算各種動能指標，請稍等...\n");
 		calcMomentumIndicator();
-		appendMessage("計算各種動能指標完畢，印出各種動能指標。");
-		/* 印出 adrMaArray */
-		for (var i=0;i<adrMaArray.length;i++) {
-			appendMessage(i+"\t"+adrMaArray[i].toFixed(2)+"%\n");
+		appendMessage("計算各種動能指標完畢，印出各種動能指標。\n");
+		/* 印出 advVolumeMaArray */
+		appendMessage("advVolumeMaArray:\n");
+		for (var i=0;i<advVolumeMaArray.length;i++) {
+			appendMessage(i+"\t"+advVolumeMaArray[i].toFixed(0)+"\n");
+		}
+		/* 印出 decVolumeMaArray */
+		appendMessage("decVolumeMaArray:\n");
+		for (var i=0;i<decVolumeMaArray.length;i++) {
+			appendMessage(i+"\t"+decVolumeMaArray[i].toFixed(0)+"\n");
 		}
 	}
 
