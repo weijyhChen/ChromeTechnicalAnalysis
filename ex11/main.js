@@ -91,11 +91,14 @@ var adlArray=[];
 /* adrMaArray 陣列用來存放和大盤相關的漲跌比率(Advance/Decline Ratio)的15天/週/月的移動平均值。 */
 var adrMaArray=[];
 
-/* advVolumeMaArray 陣列用來存放和大盤相關的上漲成交量(Advancing Valume) */
+/* advVolumeMaArray 陣列用來存放和大盤相關的上漲成交量(Advancing Valume)的10天/週/月的移動平均值 */
 var advVolumeMaArray=[];
 
-/* decVolumeMaArray 陣列用來存放和大盤相關的下跌成交量(Declining Valume) */
+/* decVolumeMaArray 陣列用來存放和大盤相關的下跌成交量(Declining Valume)的10天/週/月的移動平均值 */
 var decVolumeMaArray=[];
+
+/* btMaArray 陣列是用來存放和大盤相關的廣量衝力指標(Breadth Thrust)的10日/週/月的移動平均值 */
+var btMaArray=[];
 
 /* 本範例的進入點是此處的 window.onload 函式。 */
 
@@ -892,7 +895,7 @@ window.onload=function() {
 		}
 	}
 
-	/* 函式 calcAdvDecVolumeArray 用來計算和大盤有的上漲下跌量的10日/週/月移動平均線 */
+	/* 函式 calcAdvDecVolumeArray 用來計算和大盤有關的上漲下跌量的10日/週/月移動平均線 */
 	function calcAdvDecVolumeArray() {
 		advVolumeMaArray=[];
 		decVolumeMaArray=[];
@@ -928,6 +931,32 @@ window.onload=function() {
 		}
 	}
 
+	/* 函式 calcBtMaArray 用來計算和大盤有關的廣量衝力指標(Breadth Thrust)的10日/週/月移動平均線 */
+	function calcBtMaArray() {
+		btMaArray=[];
+		var btArray=[];
+		if ((totalAdvanceArray.length==0)||(totalDeclineArray.length==0)) {
+			/* 如果歷史資料陣列為 0 則不能算大盤動能資料 */
+			return;
+		}
+		for (var i=0;i<totalAdvanceArray.length;i++) {
+			btArray.push(totalAdvanceArray[i]/(totalAdvanceArray[i]+totalDeclineArray[i]));
+		}
+		/* 計算廣量衝力指標的10日/週/月移動平均值 */
+		for (var i=0;i<btArray.length;i++) {
+			if (i<10) {
+				btMaArray.push(0);
+			} else {
+				var ma=0;
+				for (var k=0;k<10;k++) {
+					ma=ma+btArray[i-k];
+				}
+				ma=ma/10;
+				btMaArray.push(ma);
+			}
+		}
+	}
+
 	/* 函式calcMomentumIndicator 用來集合呼叫各種計算動能指標函式 */
 	function calcMomentumIndicator() {
 		determineCalcArray();
@@ -935,6 +964,7 @@ window.onload=function() {
 		calcAdlArray();
 		calcAdrArray();
 		calcAdvDecVolumeArray();
+		calcBtMaArray();
 	}
 
 	/* 函式 showMomentumIndicator 呼叫計算漲跌資訊的函式及計算各種動能指標的函式 */
@@ -946,15 +976,10 @@ window.onload=function() {
 		appendMessage("開始計算各種動能指標，請稍等...\n");
 		calcMomentumIndicator();
 		appendMessage("計算各種動能指標完畢，印出各種動能指標。\n");
-		/* 印出 advVolumeMaArray */
-		appendMessage("advVolumeMaArray:\n");
-		for (var i=0;i<advVolumeMaArray.length;i++) {
-			appendMessage(i+"\t"+advVolumeMaArray[i].toFixed(0)+"\n");
-		}
-		/* 印出 decVolumeMaArray */
-		appendMessage("decVolumeMaArray:\n");
-		for (var i=0;i<decVolumeMaArray.length;i++) {
-			appendMessage(i+"\t"+decVolumeMaArray[i].toFixed(0)+"\n");
+		/* 印出 btMaArray */
+		appendMessage("btMaArray:\n");
+		for (var i=0;i<btMaArray.length;i++) {
+			appendMessage(i+"\t"+(btMaArray[i]*100).toFixed(2)+"%\n");
 		}
 	}
 
