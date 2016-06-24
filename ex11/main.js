@@ -103,6 +103,9 @@ var btMaArray=[];
 /* cmoMaArray 陣列是用來存放錢德動能擺盪指標(Chande Momentum Oscillator)的9日/週/月的移動平均值，它可以用在大盤及各股 */
 var cmoMaArray=[];
 
+/* cviArray 陣列用來存放和大盤相關的累積成交量指數(Cumulative Volume Index) */
+var cviArray=[];
+
 /* 本範例的進入點是此處的 window.onload 函式。 */
 window.onload=function() {
 	var idText;
@@ -365,8 +368,8 @@ window.onload=function() {
 				marketDayHistoryObject.historyDataArray[i].time+"\t"+
 				totalDayAdvanceArray[i]+"\t"+
 				totalDayDeclineArray[i]+"\t"+
-				totalDayAdvanceVolumeArray[i].toFixed(2)+"\t\t"+
-				totalDayDeclineVolumeArray[i].toFixed(2)+"\t\t"+
+				totalDayAdvanceVolumeArray[i].toFixed(1)+"\t\t"+
+				totalDayDeclineVolumeArray[i].toFixed(1)+"\t\t"+
 				marketDayHistoryObject.historyDataArray[i].volume+"\n"
 			);
 		}
@@ -573,8 +576,8 @@ window.onload=function() {
 				marketWeekHistoryObject.historyDataArray[i].time+"\t"+
 				totalWeekAdvanceArray[i]+"\t"+
 				totalWeekDeclineArray[i]+"\t"+
-				totalWeekAdvanceVolumeArray[i].toFixed(2)+"\t\t"+
-				totalWeekDeclineVolumeArray[i].toFixed(2)+"\t\t"+
+				totalWeekAdvanceVolumeArray[i].toFixed(1)+"\t\t"+
+				totalWeekDeclineVolumeArray[i].toFixed(1)+"\t\t"+
 				marketWeekHistoryObject.historyDataArray[i].volume+"\n"
 			);
 		}
@@ -782,8 +785,8 @@ window.onload=function() {
 				marketMonthHistoryObject.historyDataArray[i].time+"\t"+
 				totalMonthAdvanceArray[i]+"\t"+
 				totalMonthDeclineArray[i]+"\t"+
-				totalMonthAdvanceVolumeArray[i].toFixed(2)+"\t\t"+
-				totalMonthDeclineVolumeArray[i].toFixed(2)+"\t\t"+
+				totalMonthAdvanceVolumeArray[i].toFixed(1)+"\t\t"+
+				totalMonthDeclineVolumeArray[i].toFixed(1)+"\t\t"+
 				marketMonthHistoryObject.historyDataArray[i].volume+"\n"
 			);
 		}
@@ -1009,7 +1012,22 @@ window.onload=function() {
 		}
 	}
 
-	/* 函式calcMomentumIndicator 用來集合呼叫各種計算動能指標函式 */
+	/* 函式 calcCviArray 用來計算和大盤相關的累積成交量指數(Cumulative Volume Index) */
+	function calcCviArray() {
+		cviArray=[];
+		if ((totalAdvanceVolumeArray.length==0)||(totalDeclineVolumeArray.length==0)) {
+			/* 如果歷史資料陣列為 0 則不能算大盤動能資料 */
+			return;
+		}
+		var prevCvi=0;
+		cviArray.push(prevCvi);
+		for (var i=1;i<totalAdvanceVolumeArray.length;i++) {
+			prevCvi=prevCvi+(totalAdvanceVolumeArray[i]-totalDeclineVolumeArray[i]);
+			cviArray.push(prevCvi);
+		}
+	}
+
+	/* 函式 calcMomentumIndicator 用來集合呼叫各種計算動能指標函式 */
 	function calcMomentumIndicator() {
 		determineCalcArray();
 		calcABIArray();
@@ -1018,6 +1036,7 @@ window.onload=function() {
 		calcAdvDecVolumeArray();
 		calcBtMaArray();
 		calcCmoMaArray(cmoHistoryDataArray,20);
+		calcCviArray();
 	}
 
 	/* 函式 showMomentumIndicator 呼叫計算漲跌資訊的函式及計算各種動能指標的函式 */
@@ -1029,10 +1048,10 @@ window.onload=function() {
 		appendMessage("開始計算大盤各種動能指標，請稍等...\n");
 		calcMomentumIndicator();
 		appendMessage("計算大盤各種動能指標完畢，印出各種動能指標。\n");
-		/* 印出 cmoMaArray */
-		appendMessage("cmoMaArray:\n");
-		for (var i=0;i<cmoMaArray.length;i++) {
-			appendMessage(i+"\t"+cmoMaArray[i].toFixed(2)+"\n");
+		/* 印出 cviArray */
+		appendMessage("cviArray:\n");
+		for (var i=0;i<cviArray.length;i++) {
+			appendMessage(i+"\t"+cviArray[i].toFixed(2)+"\n");
 		}
 	}
 
