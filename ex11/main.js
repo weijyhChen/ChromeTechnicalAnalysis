@@ -100,8 +100,10 @@ var decVolumeMaArray=[];
 /* btMaArray 陣列是用來存放和大盤相關的廣量衝力指標(Breadth Thrust)的10日/週/月的移動平均值 */
 var btMaArray=[];
 
-/* 本範例的進入點是此處的 window.onload 函式。 */
+/* cmoMaArray 陣列是用來存放錢德動能擺盪指標(Chande Momentum Oscillator)的9日/週/月的移動平均值，它可以用在大盤及各股 */
+var cmoMaArray=[];
 
+/* 本範例的進入點是此處的 window.onload 函式。 */
 window.onload=function() {
 	var idText;
 	var companyText;
@@ -800,6 +802,8 @@ window.onload=function() {
 	var totalDeclineArray=[];
 	var totalAdvanceVolumeArray=[];
 	var totalDeclineVolumeArray=[];
+	var cmoHistoryDataArray=[];
+
 	/* 函式 determineCalcArray 用來決定計算各項動能指標時要用到的 totalAdvanceArray
 	 * 及 totalDeclineArray 陣列是指向哪個真正的陣列。
 	 */
@@ -810,16 +814,19 @@ window.onload=function() {
 			totalDeclineArray=totalDayDeclineArray;
 			totalAdvanceVolumeArray=totalDayAdvanceVolumeArray;
 			totalDeclineVolumeArray=totalDayDeclineVolumeArray;
+			cmoHistoryDataArray=marketDayHistoryObject.historyDataArray;
 		} else if (historyType=="w") {
 			totalAdvanceArray=totalWeekAdvanceArray;
 			totalDeclineArray=totalWeekDeclineArray;
 			totalAdvanceVolumeArray=totalWeekAdvanceVolumeArray;
 			totalDeclineVolumeArray=totalWeekDeclineVolumeArray;
+			cmoHistoryDataArray=marketWeekHistoryObject.historyDataArray;
 		} else if (historyType=="m") {
 			totalAdvanceArray=totalMonthAdvanceArray;
 			totalDeclineArray=totalMonthDeclineArray;
 			totalAdvanceVolumeArray=totalMonthAdvanceVolumeArray;
 			totalDeclineVolumeArray=totalMonthDeclineVolumeArray;
+			cmoHistoryDataArray=marketMonthHistoryObject.historyDataArray;
 		}
 	}
 
@@ -957,6 +964,51 @@ window.onload=function() {
 		}
 	}
 
+	/* 函式 calcCmoMaArray 用來計算出錢德動能擺盪指標(Chande Momentum Oscillator)的9日/週/月的移動平均值 */
+	function calcCmoMaArray(historyDataArray,N) {
+		var suArray=[];
+		var sdArray=[];
+		var cmoArray=[];
+		cmoMaArray=[];
+		/* 開始計算 su 及 sd 陣列，二者定義如下：
+		 *	su 前N天中上漲交易日今日與昨日收盤價差異的總合
+		 *	sd 前N天中下跌交易日今日與昨日收盤價差異的總合絕對值
+		 * N=20
+		 * 計算出 su 及 sd 之後，接著算出錢德動能擺盪指標=(su-sd)/(su+sd)*100;
+		 */
+		for (var i=0;i<historyDataArray.length;i++) {
+			var su=0;
+			var sd=0;
+			for (var k=0;k<N;k++) {
+				var index=i-k;
+				if (index<1) {
+					break;
+				}
+				if (historyDataArray[index].close>historyDataArray[index-1].close) {					// 上漲
+					su=su+(historyDataArray[index].close-historyDataArray[index-1].close);
+				} else if (historyDataArray[index].close<historyDataArray[index-1].close) {	// 下跌
+					sd=sd+(historyDataArray[index-1].close-historyDataArray[index].close);
+				}
+			}
+			var cmo=(su-sd)/(su+sd);
+			cmo=cmo*100;
+			cmoArray.push(cmo);
+		}
+		/* 計算錢德動能擺盪指標的9日/週/月移動平均值 */
+		for (var i=0;i<cmoArray.length;i++) {
+			if (i<10) {
+				cmoMaArray.push(0);
+			} else {
+				var ma=0;
+				for (var k=0;k<9;k++) {
+					ma=ma+cmoArray[i-k];
+				}
+				ma=ma/9;
+				cmoMaArray.push(ma);
+			}
+		}
+	}
+
 	/* 函式calcMomentumIndicator 用來集合呼叫各種計算動能指標函式 */
 	function calcMomentumIndicator() {
 		determineCalcArray();
@@ -965,6 +1017,7 @@ window.onload=function() {
 		calcAdrArray();
 		calcAdvDecVolumeArray();
 		calcBtMaArray();
+		calcCmoMaArray(cmoHistoryDataArray,20);
 	}
 
 	/* 函式 showMomentumIndicator 呼叫計算漲跌資訊的函式及計算各種動能指標的函式 */
@@ -973,13 +1026,13 @@ window.onload=function() {
 		appendMessage("開始計算大盤的每日/每週/每月上漲下跌家數等資訊，請稍等...\n");
 		calcAdvDecArray();
 		appendMessage("計算大盤的每日/每週/每月上漲下跌家數等資訊完畢。\n");
-		appendMessage("開始計算各種動能指標，請稍等...\n");
+		appendMessage("開始計算大盤各種動能指標，請稍等...\n");
 		calcMomentumIndicator();
-		appendMessage("計算各種動能指標完畢，印出各種動能指標。\n");
-		/* 印出 btMaArray */
-		appendMessage("btMaArray:\n");
-		for (var i=0;i<btMaArray.length;i++) {
-			appendMessage(i+"\t"+(btMaArray[i]*100).toFixed(2)+"%\n");
+		appendMessage("計算大盤各種動能指標完畢，印出各種動能指標。\n");
+		/* 印出 cmoMaArray */
+		appendMessage("cmoMaArray:\n");
+		for (var i=0;i<cmoMaArray.length;i++) {
+			appendMessage(i+"\t"+cmoMaArray[i].toFixed(2)+"\n");
 		}
 	}
 
