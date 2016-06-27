@@ -884,7 +884,7 @@ window.onload=function() {
 	}
 
 	/* 函式 calcAdrArray 用來計算和大盤相關的漲跌比率(Advance/Decline Ratio)，
-	 * 並計算出5日的移動平均值。
+	 * 並計算出15日的移動平均值。
 	 */
 	function calcAdrArray() {
 		var adrArray=[];
@@ -1049,19 +1049,55 @@ window.onload=function() {
 
 	/* 函式 calcMomentumIndicator 用來集合呼叫各種計算動能指標函式 */
 	function calcMomentumIndicator() {
-		/* 以下是各個大盤動能指標的計算函式 */
+		/* 以下是呼叫各個大盤動能指標的計算函式 */
 		determineCalcArray();
 		calcABIArray();
 		calcAdlArray();
 		calcAdrArray();
 		calcAdvDecVolumeArray();
 		calcBtMaArray();
-		calcCmoMaArray(cmoHistoryDataArray,20);
 		calcCviArray();
 		if ((!twMarketCheckbox.checked)&&(companyIndex!=-1)) {
-			/* 以下是個股的動能計算函式 */
+			/* 以下是呼叫個股的錢德動能擺盪計算函式 */
 			calcCompanyCmoArray();
+			/* 將計算出的 cmoMaArray 保存到 companyCmoMaArray */
 			companyCmoMaArray=cmoMaArray;
+		}
+		/* 以下是呼叫大盤的錢德動能擺盪計算函式 */
+		calcCmoMaArray(cmoHistoryDataArray,20);
+	}
+
+	/* 函式 printMomentumIndicator 將計算出的各種動能指標印出 */
+	function printMomentumIndicator() {
+		showMessage("印出各種動能指標:\n");
+		appendMessage("ABI\t\t絕對廣量指標10期移動平均\n");
+		appendMessage("ADL\t\t騰落指標\n");
+		appendMessage("ADR\t\t漲跌比率15期移動平均\n");
+		appendMessage("ADV\t\t上漲成交量10期移動平均\n");
+		appendMessage("DEV\t\t下跌成交量10期移動平均\n");
+		appendMessage("BTI\t\t廣量衝力指標10期移動平均\n");
+		appendMessage("CMO\t\t錢德動能擺盪指標9期移動平均\n");
+		appendMessage("CVI\t\t累積成交量指數\n\n");
+		appendMessage("ABI\tADL\tADR\tADV\tDEV\tBTI\tCMO\tCVI\t\t");
+		if ((!twMarketCheckbox.checked)&&(companyIndex!=-1)) {
+			appendMessage(savedCompanyArray[companyIndex].companyName+"CMO");
+		}
+		appendMessage("\n");
+		for (var i=0;i<AbiMaArray.length;i++) {
+			appendMessage(
+				(AbiMaArray[i]*100).toFixed(2)+"%\t"+
+				adlArray[i]+"\t"+
+				adrMaArray[i].toFixed(2)+"%\t"+
+				advVolumeMaArray[i].toFixed(0)+"\t"+
+				decVolumeMaArray[i].toFixed(0)+"\t"+
+				(btMaArray[i]*100).toFixed(2)+"%\t"+
+				cmoMaArray[i].toFixed(2)+"\t"+
+				cviArray[i].toFixed(1)+"\t\t"
+			);
+			if ((!twMarketCheckbox.checked)&&(companyIndex!=-1)) {
+				appendMessage(companyCmoMaArray[i].toFixed(2));
+			}
+			appendMessage("\n");
 		}
 	}
 
@@ -1074,18 +1110,7 @@ window.onload=function() {
 		appendMessage("開始計算大盤及個股各種動能指標，請稍等...\n");
 		calcMomentumIndicator();
 		appendMessage("計算大盤及個股各種動能指標完畢，印出各種動能指標。\n");
-		/* 印出 cmoMaArray */
-		appendMessage("cmoMaArray:\n");
-		for (var i=0;i<cmoMaArray.length;i++) {
-			appendMessage(i+"\t"+cmoMaArray[i].toFixed(2)+"\n");
-		}
-		if ((!twMarketCheckbox.checked)&&(companyIndex!=-1)) {
-			/* 印出 companyCmoMaArray */
-			appendMessage("companyCmoMaArray:\n");
-			for (var i=0;i<companyCmoMaArray.length;i++) {
-				appendMessage(i+"\t"+companyCmoMaArray[i].toFixed(2)+"\n");
-			}
-		}
+		printMomentumIndicator();
 	}
 
 	/* 函式 createCompanyHistoryObjectCallback 是由使用者選擇公司
