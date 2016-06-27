@@ -106,6 +106,9 @@ var cmoMaArray=[];
 /* cviArray 陣列用來存放和大盤相關的累積成交量指數(Cumulative Volume Index) */
 var cviArray=[];
 
+/* companyCmoMaArray 陣列是用來存放個股的錢德動能擺盪指標(Chande Momentum Oscillator)的9日/週/月的移動平均值 */
+var companyCmoMaArray=[];
+
 /* 本範例的進入點是此處的 window.onload 函式。 */
 window.onload=function() {
 	var idText;
@@ -132,6 +135,9 @@ window.onload=function() {
 	var companyDayHistoryObjectArray=[];
 	var companyWeekHistoryObjectArray=[];
 	var companyMonthHistoryObjectArray=[];
+	var found=false;
+	var foundIndex=-1;
+	var companyIndex;
 
 	/* 函式 timeCompare 用在將 advanceArray 及 declineArray
 	 * 排序時，該二陣列中的元素是物件，物件內容如下：
@@ -1027,8 +1033,23 @@ window.onload=function() {
 		}
 	}
 
+	/* 函式 calcCompanyCmoArray 用來計算各股的錢德動能指標 */
+	function calcCompanyCmoArray() {
+		var companyHistoryData=[];
+		/* 根據 historyType 決定要用哪個歷史資料陣列做計算 */
+		if (historyType=="d") {
+			companyHistoryData=companyDayHistoryObjectArray[companyIndex].historyDataArray;
+		} else if (historyType=="w") {
+			companyHistoryData=companyWeekHistoryObjectArray[companyIndex].historyDataArray;
+		} else if (historyType=="m") {
+			companyHistoryData=companyMonthHistoryObjectArray[companyIndex].historyDataArray;
+		}
+		calcCmoMaArray(companyHistoryData,20);
+	}
+
 	/* 函式 calcMomentumIndicator 用來集合呼叫各種計算動能指標函式 */
 	function calcMomentumIndicator() {
+		/* 以下是各個大盤動能指標的計算函式 */
 		determineCalcArray();
 		calcABIArray();
 		calcAdlArray();
@@ -1037,6 +1058,11 @@ window.onload=function() {
 		calcBtMaArray();
 		calcCmoMaArray(cmoHistoryDataArray,20);
 		calcCviArray();
+		if ((!twMarketCheckbox.checked)&&(companyIndex!=-1)) {
+			/* 以下是個股的動能計算函式 */
+			calcCompanyCmoArray();
+			companyCmoMaArray=cmoMaArray;
+		}
 	}
 
 	/* 函式 showMomentumIndicator 呼叫計算漲跌資訊的函式及計算各種動能指標的函式 */
@@ -1045,13 +1071,20 @@ window.onload=function() {
 		appendMessage("開始計算大盤的每日/每週/每月上漲下跌家數等資訊，請稍等...\n");
 		calcAdvDecArray();
 		appendMessage("計算大盤的每日/每週/每月上漲下跌家數等資訊完畢。\n");
-		appendMessage("開始計算大盤各種動能指標，請稍等...\n");
+		appendMessage("開始計算大盤及個股各種動能指標，請稍等...\n");
 		calcMomentumIndicator();
-		appendMessage("計算大盤各種動能指標完畢，印出各種動能指標。\n");
-		/* 印出 cviArray */
-		appendMessage("cviArray:\n");
-		for (var i=0;i<cviArray.length;i++) {
-			appendMessage(i+"\t"+cviArray[i].toFixed(2)+"\n");
+		appendMessage("計算大盤及個股各種動能指標完畢，印出各種動能指標。\n");
+		/* 印出 cmoMaArray */
+		appendMessage("cmoMaArray:\n");
+		for (var i=0;i<cmoMaArray.length;i++) {
+			appendMessage(i+"\t"+cmoMaArray[i].toFixed(2)+"\n");
+		}
+		if ((!twMarketCheckbox.checked)&&(companyIndex!=-1)) {
+			/* 印出 companyCmoMaArray */
+			appendMessage("companyCmoMaArray:\n");
+			for (var i=0;i<companyCmoMaArray.length;i++) {
+				appendMessage(i+"\t"+companyCmoMaArray[i].toFixed(2)+"\n");
+			}
 		}
 	}
 
@@ -1333,6 +1366,7 @@ window.onload=function() {
 				 * createCompanyHistoryObjectCallback 函式進行後續
 				 * 的繪圖工作。
 				 */
+				companyIndex=-1;
 				companyHistoryObject=new CompanyHistory(
 							"%23001",
 							"大盤",
@@ -1348,8 +1382,6 @@ window.onload=function() {
 				 * 的公司代號。 foundIndex 代表找到的公司在 savedCompanyArray
 				 * 中的 index，一開始假設無該公司，所以 foundIndex=-1
 				 */
-				var found=false;
-				var foundIndex=-1;
 				/* 每家公司一一比對 companyId 是否為 idText.value(使用者輸入
 				 * 的ID)。
 				 */
@@ -1374,6 +1406,7 @@ window.onload=function() {
 					 * createCompanyHistoryObjectCallback 函式進行後續
 					 * 繪圖工作。
 					 */
+					companyIndex=foundIndex;
 					companyHistoryObject=new CompanyHistory(
 							savedCompanyArray[foundIndex].companyID,
 							savedCompanyArray[foundIndex].companyName,
@@ -1418,6 +1451,7 @@ window.onload=function() {
 					 * createCompanyHistoryObjectCallback 函式進行後續
 					 * 繪圖工作。
 					 */
+					companyIndex=foundIndex;
 					companyHistoryObject=new CompanyHistory(
 							savedCompanyArray[foundIndex].companyID,
 							savedCompanyArray[foundIndex].companyName,
