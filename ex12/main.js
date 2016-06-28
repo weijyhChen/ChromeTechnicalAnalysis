@@ -33,6 +33,9 @@ var cema15Array=[];
 /* cema7dot5Array 陣列用來存放7.5%指數移動平均線(Calculation, Exponential Moving Average) */
 var cema7dot5Array=[];
 
+/* macdArray 陣列用來存放平滑異同移動平均線(Moving Average Convergence/Divergence) */
+var macdArray=[];
+
 /* 本範例的進入點是此處的 window.onload 函式。 */
 window.onload=function() {
 	var idText;
@@ -139,27 +142,50 @@ window.onload=function() {
 		return percentCemaArray;
 	}
 
+	/* 函式 calcMacdArray 用來計算平滑異同移動平均線(Moving Average Convergence/Divergence) */
+	function calcMacdArray() {
+		macdArray=[];
+		for (var i=0;i<historyDataArrayForTechnicalAnalysis.length;i++) {
+			var macd=cema15Array[i]-cema7dot5Array[i];
+			macdArray.push(macd);
+		}
+	}
+
 	/* 函式 calcTechnicalIndicator 用來計算各種技術分析指標 */
 	function calcTechnicalIndicator() {
 		determineHistoryDataArray();
 		cema15Array=calcCemaArray(0.15);
 		cema7dot5Array=calcCemaArray(0.075);
+		calcMacdArray();
 	}
 
 	/* 函式 printTechnicalIndicator 用來列印出各種技術分析指標 */
 	function printTechnicalIndicator() {
-		showMessage("印出各種技術分析指標:\n");
+		appendMessage("印出");
+		if (twMarketCheckbox.checked) {
+			appendMessage("大盤");
+		} else if (companyIndex!=-1) {
+			appendMessage(savedCompanyArray[companyIndex].companyName);
+		}
+		appendMessage("各種技術分析指標:\n");
 		appendMessage("CEMA15\t\t15%指數移動平均線\n");
 		appendMessage("CEMA75\t\t7.5%指數移動平均線\n");
+		appendMessage("MACD\t\t平滑異同移動平均線\n");
 		appendMessage("\n");
-		appendMessage("時間\tCEMA15\tCEMA75\t\t");
+		appendMessage("時間\t\tCEMA15\tCEMA75\tMACD");
 		appendMessage("\n");
 		for (var i=0;i<historyDataArrayForTechnicalAnalysis.length;i++) {
 			appendMessage(
-				historyDataArrayForTechnicalAnalysis[i].time+"\t\t"+
+				historyDataArrayForTechnicalAnalysis[i].time+"\t"+
 				cema15Array[i].toFixed(1)+"\t"+
-				cema7dot5Array[i].toFixed(1)+"\t\t"
+				cema7dot5Array[i].toFixed(1)+"\t"
 			);
+			/* MACD 的值在16期之後才有效 */
+			if (i>26) {
+				appendMessage(macdArray[i].toFixed(2)+"\t");
+			} else {
+				appendMessage("0.0\t");
+			}
 			appendMessage("\n");
 		}
 	}
