@@ -27,6 +27,12 @@ var updatedHistoryData=false;
  */
 var startButtonPressed=false;
 
+/* cema15Array 陣列用來存放15%指數移動平均線(Calculation, Exponential Moving Average) */
+var cema15Array=[];
+
+/* cema7dot5Array 陣列用來存放7.5%指數移動平均線(Calculation, Exponential Moving Average) */
+var cema7dot5Array=[];
+
 /* 本範例的進入點是此處的 window.onload 函式。 */
 window.onload=function() {
 	var idText;
@@ -92,12 +98,70 @@ window.onload=function() {
 		}
 	}
 
+	var historyDataArrayForTechnicalAnalysis=[];
+	/* 函式 determineHistoryDataArray 來決定做技術分析計算時要用到的歷史資料陣列是哪一個 */
+	function determineHistoryDataArray() {
+		/* 初始化 historyDataArrayForTechnicalAnalysis 為空陣列，而後判定該
+		 * 用哪一個陣列指定給 historyDataArrayForTechnicalAnalysis 當做技術
+		 * 分析要用到的歷史資料陣列。
+		 */
+		historyDataArrayForTechnicalAnalysis=[];
+		if (twMarketCheckbox.checked) {
+			/* 如果使用者勾選了『大盤』核取盒 */
+			companyIndex=-1;
+			if (historyType=="d") {
+				historyDataArrayForTechnicalAnalysis=marketDayHistoryObject.historyDataArray;
+			} else if (historyType=="w") {
+				historyDataArrayForTechnicalAnalysis=marketWeekHistoryObject.historyDataArray;
+			} else if (historyType=="m") {
+				historyDataArrayForTechnicalAnalysis=marketMonthHistoryObject.historyDataArray;
+			}
+		} else if (companyIndex!=-1) {
+			if (historyType=="d") {
+				historyDataArrayForTechnicalAnalysis=companyDayHistoryObjectArray[companyIndex].historyDataArray;
+			} else if (historyType=="w") {
+				historyDataArrayForTechnicalAnalysis=companyWeekHistoryObjectArray[companyIndex].historyDataArray;
+			} else if (historyType=="m") {
+				historyDataArrayForTechnicalAnalysis=companyMonthHistoryObjectArray[companyIndex].historyDataArray;
+			}
+		}
+	}
+
+	/* 函式 calcCemaArray 用來計算指數移動平均線(Calculation, Exponential Moving Average) */
+	function calcCemaArray(percent) {
+		var percentCemaArray=[];
+		var prevCema=0;
+		percentCemaArray.push(prevCema);
+		for (var i=1;i<historyDataArrayForTechnicalAnalysis.length;i++) {
+			prevCema=historyDataArrayForTechnicalAnalysis[i].close*percent+prevCema*(1-percent);
+			percentCemaArray.push(prevCema);
+		}
+		return percentCemaArray;
+	}
+
 	/* 函式 calcTechnicalIndicator 用來計算各種技術分析指標 */
 	function calcTechnicalIndicator() {
+		determineHistoryDataArray();
+		cema15Array=calcCemaArray(0.15);
+		cema7dot5Array=calcCemaArray(0.075);
 	}
 
 	/* 函式 printTechnicalIndicator 用來列印出各種技術分析指標 */
 	function printTechnicalIndicator() {
+		showMessage("印出各種技術分析指標:\n");
+		appendMessage("CEMA15\t\t15%指數移動平均線\n");
+		appendMessage("CEMA75\t\t7.5%指數移動平均線\n");
+		appendMessage("\n");
+		appendMessage("時間\tCEMA15\tCEMA75\t\t");
+		appendMessage("\n");
+		for (var i=0;i<historyDataArrayForTechnicalAnalysis.length;i++) {
+			appendMessage(
+				historyDataArrayForTechnicalAnalysis[i].time+"\t\t"+
+				cema15Array[i].toFixed(1)+"\t"+
+				cema7dot5Array[i].toFixed(1)+"\t\t"
+			);
+			appendMessage("\n");
+		}
 	}
 
 	/* 函式 showTechnicalIndicator 呼叫計算漲跌資訊的函式及計算各種技術指標的函式 */
