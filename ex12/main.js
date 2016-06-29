@@ -7,6 +7,35 @@
  * (Relative Strength Index,RSI)。
  */
 
+ /*
+	 其它重要技術標列表：
+
+	 RSI：相對強弱指標
+　　A 值：過去 N日內上漲點數(價格)總和/ N
+　　B 值：過去 N日內下跌點數(價格)總和/ N
+　　RS： A/B
+　　C 值：100/(RS+1)
+　　N 日 RSI= 100-C
+
+	 BIA：乖離率，以當日指數(股價)-最近 N日平均指
+　　　數(股價)，再除以最近 N日平均數(股價)。
+　　　a.10日 BIA達-4.5%以下為買進時機，5%以上
+　　　　為賣出時機。
+　　　b.20日 BIA達-7%以下為買進時機，8%以上為
+　　　　賣出時機。
+　　　c.60日乖離率達-11%以下為買進時機，14%以
+　　　　上為賣出時機。
+
+	 威廉指標：W%R 9：9日威廉指標， %R=
+　　　100*(9日內最高價-當日收盤價)/(9日內最高價-9日內最低價)
+　　　以%R=0為上限， 100為下限；當
+　　　1. %R進入80-100%之間為超賣狀態；
+　　　2. %R進入20-0%之間為超買狀態；
+　　　3. %R為 50%稱之中軸線，衝上 50%，股價開始轉強可買入，
+　　　　 跌破中軸線，股價開始轉弱，應該賣出。
+　　　此指標敏感度大，相對騙線多。
+ */
+
 /* ※※ 注意：為了不影響原本綜合範例 10 的程式運作，因此不改變
  * historyObject.js檔案，所以把計算出來的大盤及各公司指標資料放在這
  * 裡，實際上和大盤及各公司相關的資料應該放在 CompanyHistory 物件中。
@@ -35,6 +64,18 @@ var cema7dot5Array=[];
 
 /* macdArray 陣列用來存放平滑異同移動平均線(Moving Average Convergence/Divergence) */
 var macdArray=[];
+
+/* rsv9Array 陣列用來保存9期KD隨機震盪指標(KD Stochastic Oscillator)的RSV值 */
+var rsv9Array=[];
+
+/* kdsoKArray 陣列用來保存9期KD隨機震盪指標(KD Stochastic Oscillator)的K值 */
+var kdsoKArray=[];
+
+/* kdsoDArray 陣列用來保存9期KD隨機震盪指標(KD Stochastic Oscillator)的D值 */
+var kdsoDArray=[];
+
+/* kdsoJArray 陣列用來保存9期KD隨機震盪指標(KD Stochastic Oscillator)的J值 */
+var kdsoJArray=[];
 
 /* 本範例的進入點是此處的 window.onload 函式。 */
 window.onload=function() {
@@ -151,12 +192,59 @@ window.onload=function() {
 		}
 	}
 
+	/* 函式 calcRsvArray 用來計算N期KD隨機震盪指標(KD Stochastic Oscillator)的RSV值 */
+	function calcRsvArray(N) {
+		var rsvArray=[];
+		for (var i=0;i<historyDataArrayForTechnicalAnalysis.length;i++) {
+			if (i<N) {
+				rsvArray.push(0);
+			} else {
+				/* 找出 N 期中的最高價及最低價 */
+				var min=Number.MAX_VALUE;
+				var max=Number.MIN_VALUE;
+				for (var k=0;k<N;k++) {
+					if (historyDataArrayForTechnicalAnalysis[i-k].high>max) {
+						max=historyDataArrayForTechnicalAnalysis[i-k].high;
+					}
+					if (historyDataArrayForTechnicalAnalysis[i-k].low<min) {
+						min=historyDataArrayForTechnicalAnalysis[i-k].low;
+					}
+				}
+				/* 計算KD隨機震盪指標的RSV值並堆入陣列中 */
+				var rsvValue=(historyDataArrayForTechnicalAnalysis[i].close-min)/(max-min)*100;
+				// appendMessage(i+"\t"+min+"\t"+max+"\t"+rsvValue+"\n");
+				rsvArray.push(rsvValue);
+			}
+		}
+		return rsvArray;
+	}
+
+	/* 函式 calcKDJArray 用來計算KD隨機震盪指標(KD Stochastic Oscillator)的KD,J值 */
+	function calcKDJArray(rsvArray) {
+		kdsoKArray=[];
+		kdsoDArray=[];
+		kdsoJArray=[];
+		var K=0;
+		var D=0;
+		var J=0;
+		for (i=0;i<rsvArray.length;i++) {
+			K=2/3*K+1/3*rsvArray[i];
+			D=2/3*D+1/3*K;
+			J=3*K-2*D;
+			kdsoKArray.push(K);
+			kdsoDArray.push(D);
+			kdsoJArray.push(J);
+		}
+	}
+
 	/* 函式 calcTechnicalIndicator 用來計算各種技術分析指標 */
 	function calcTechnicalIndicator() {
 		determineHistoryDataArray();
 		cema15Array=calcCemaArray(0.15);
 		cema7dot5Array=calcCemaArray(0.075);
 		calcMacdArray();
+		rsv9Array=calcRsvArray(9);
+		calcKDJArray(rsv9Array);
 	}
 
 	/* 函式 printTechnicalIndicator 用來列印出各種技術分析指標 */
@@ -171,8 +259,11 @@ window.onload=function() {
 		appendMessage("CEMA15\t\t15%指數移動平均線\n");
 		appendMessage("CEMA75\t\t7.5%指數移動平均線\n");
 		appendMessage("MACD\t\t平滑異同移動平均線\n");
+		appendMessage("RSV\t\tKD隨機震盪指標(RSV值)\n");
+		appendMessage("K\t\tKD隨機震盪指標(K值)\n");
+		appendMessage("D\t\tKD隨機震盪指標(D值)\n");
 		appendMessage("\n");
-		appendMessage("時間\t\tCEMA15\tCEMA75\tMACD");
+		appendMessage("時間\t\tCEMA15\tCEMA75\tMACD\tRSV\tK\tD");
 		appendMessage("\n");
 		for (var i=0;i<historyDataArrayForTechnicalAnalysis.length;i++) {
 			appendMessage(
@@ -186,6 +277,9 @@ window.onload=function() {
 			} else {
 				appendMessage("0.0\t");
 			}
+			appendMessage(rsv9Array[i].toFixed(2)+"\t");
+			appendMessage(kdsoKArray[i].toFixed(2)+"\t");
+			appendMessage(kdsoDArray[i].toFixed(2)+"\t");
 			appendMessage("\n");
 		}
 	}
