@@ -10,13 +10,6 @@
  /*
 	 其它重要技術標列表：
 
-	 RSI：相對強弱指標
-　　A 值：過去 N日內上漲點數(價格)總和/ N
-　　B 值：過去 N日內下跌點數(價格)總和/ N
-　　RS： A/B
-　　C 值：100/(RS+1)
-　　N 日 RSI= 100-C
-
 	 BIA：乖離率，以當日指數(股價)-最近 N日平均指
 　　　數(股價)，再除以最近 N日平均數(股價)。
 　　　a.10日 BIA達-4.5%以下為買進時機，5%以上
@@ -76,6 +69,10 @@ var kdsoDArray=[];
 
 /* kdsoJArray 陣列用來保存9期KD隨機震盪指標(KD Stochastic Oscillator)的J值 */
 var kdsoJArray=[];
+
+/* rsi5Array, rsi10Array 陣列分別用來儲存5期及10期的相對強弱指標(Relative Strength Index) */
+var rsi5Array=[];
+var rsi10Array=[];
 
 /* 本範例的進入點是此處的 window.onload 函式。 */
 window.onload=function() {
@@ -237,6 +234,56 @@ window.onload=function() {
 		}
 	}
 
+	/* 函式 calcRsiArray 用來計算N期相對強弱指標(Relative Strength Index)
+		RSI：相對強弱指標
+　　	A 值：過去 N日內上漲點數(價格)總和/ N
+　　	B 值：過去 N日內下跌點數(價格)總和/ N
+　　	RS： A/B
+　　	C 值：100/(RS+1)
+　　	N 日 RSI= 100-C
+	*/
+	function calcRsiArray(N) {
+		var rsiArray=[];
+		for (var i=0;i<historyDataArrayForTechnicalAnalysis.length;i++) {
+			var prevUpSome;
+			var prevDownSome;
+			if (i<N) {
+				rsiArray.push(0);
+			} else if (i==N) {
+				var upSum=0;
+				var downSum=0;
+				for (k=0;k<N;k++) {
+					if (historyDataArrayForTechnicalAnalysis[i-k].close>historyDataArrayForTechnicalAnalysis[i-k-1].close){
+						/* 上漲 */
+						upSum=upSum+(historyDataArrayForTechnicalAnalysis[i-k].close-historyDataArrayForTechnicalAnalysis[i-k-1].close);
+					} else if (historyDataArrayForTechnicalAnalysis[i-k].close<historyDataArrayForTechnicalAnalysis[i-k-1].close) {
+						/* 下跌 */
+						downSum=downSum+(historyDataArrayForTechnicalAnalysis[i-k-1].close-historyDataArrayForTechnicalAnalysis[i-k].close);
+					}
+				}
+				var prevUpSome=upSum/N;
+				var prevDownSome=downSum/N;
+				var RS=prevUpSome/prevDownSome;
+				var C=100/(RS+1);
+				rsiArray.push(100-C);
+			} else {
+				if (historyDataArrayForTechnicalAnalysis[i].close>historyDataArrayForTechnicalAnalysis[i-1].close){
+					/* 上漲 */
+					prevUpSome=prevUpSome+1/N*(historyDataArrayForTechnicalAnalysis[i].close-historyDataArrayForTechnicalAnalysis[i-1].close-prevUpSome);
+					prevDownSome=prevDownSome+1/N*(0-prevDownSome);
+				} else if (historyDataArrayForTechnicalAnalysis[i].close<historyDataArrayForTechnicalAnalysis[i-1].close) {
+					/* 下跌 */
+					prevUpSome=prevUpSome+1/N*(0-prevUpSome);
+					prevDownSome=prevDownSome+1/N*(historyDataArrayForTechnicalAnalysis[i-1].close-historyDataArrayForTechnicalAnalysis[i].close-prevDownSome);
+				}
+				var RS=prevUpSome/prevDownSome;
+				var C=100/(RS+1);
+				rsiArray.push(100-C);
+			}
+		}
+		return rsiArray;
+	}
+
 	/* 函式 calcTechnicalIndicator 用來計算各種技術分析指標 */
 	function calcTechnicalIndicator() {
 		determineHistoryDataArray();
@@ -245,6 +292,8 @@ window.onload=function() {
 		calcMacdArray();
 		rsv9Array=calcRsvArray(9);
 		calcKDJArray(rsv9Array);
+		rsi5Array=calcRsiArray(5);
+		rsi10Array=calcRsiArray(10);
 	}
 
 	/* 函式 printTechnicalIndicator 用來列印出各種技術分析指標 */
@@ -262,8 +311,10 @@ window.onload=function() {
 		appendMessage("RSV\t\tKD隨機震盪指標(RSV值)\n");
 		appendMessage("K\t\tKD隨機震盪指標(K值)\n");
 		appendMessage("D\t\tKD隨機震盪指標(D值)\n");
+		appendMessage("RSI5\t\t5期相對強弱指標\n");
+		appendMessage("RSI10\t\t10期相對強弱指標\n");
 		appendMessage("\n");
-		appendMessage("時間\t\tCEMA15\tCEMA75\tMACD\tRSV\tK\tD");
+		appendMessage("時間\t\tCEMA15\tCEMA75\tMACD\tRSV\tK\tD\tRSI5\tRSI10");
 		appendMessage("\n");
 		for (var i=0;i<historyDataArrayForTechnicalAnalysis.length;i++) {
 			appendMessage(
@@ -271,7 +322,7 @@ window.onload=function() {
 				cema15Array[i].toFixed(1)+"\t"+
 				cema7dot5Array[i].toFixed(1)+"\t"
 			);
-			/* MACD 的值在16期之後才有效 */
+			/* MACD 的值在26期之後才有效 */
 			if (i>26) {
 				appendMessage(macdArray[i].toFixed(2)+"\t");
 			} else {
@@ -280,6 +331,8 @@ window.onload=function() {
 			appendMessage(rsv9Array[i].toFixed(2)+"\t");
 			appendMessage(kdsoKArray[i].toFixed(2)+"\t");
 			appendMessage(kdsoDArray[i].toFixed(2)+"\t");
+			appendMessage(rsi5Array[i].toFixed(2)+"\t");
+			appendMessage(rsi10Array[i].toFixed(2)+"\t");
 			appendMessage("\n");
 		}
 	}
